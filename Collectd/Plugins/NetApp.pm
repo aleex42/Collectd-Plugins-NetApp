@@ -13,12 +13,18 @@ package Collectd::Plugins::NetApp;
 use strict;
 use warnings;
 
-use Collectd::Plugins::NetApp::CPU qw(cdot_cpu);
+use Collectd::Plugins::NetApp::CPU qw(cdot_cpu smode_cpu);
+
+use feature qw/switch/;
 
 use Data::Dumper;
 
 use Collectd qw( :all );
 use Config::Simple;
+
+my $ConfigFile = "/etc/collectd/netapp.ini";
+my $cfg = new Config::Simple($ConfigFile);
+my %Config = $cfg->vars();
 
 my $plugin_name = "NetApp";
 
@@ -66,24 +72,44 @@ sub my_get {
 
     foreach my $hostname (keys %hosts){
 
-    my $filer_os = $Config{ $hostname . '.Mode'}
+        my $filer_os = $Config{ $hostname . '.Mode'};
 
 # TODO: Switch for different modules
 
-            my $cpu_result = cdot_cpu($hostname);
+        given ($filer_os){
 
-            foreach my $node (keys %$cpu_result){
+            when("cDOT"){
 
-                my $node_value = $cpu_result->{$node};
+                my $cpu_result = cdot_cpu($hostname);
+
+                foreach my $node (keys %$cpu_result){
+
+                    my $node_value = $cpu_result->{$node};
+
+                    plugin_dispatch_values({
+                            plugin => 'cpu',
+                            plugin_instance => $node,
+                            type => 'cpu',
+                            values => [$node_value],
+                            interval => '30',
+                            host => $hostname,
+                            });
+                }
+            }
+
+            default {
+
+#                my $cpu_result = smode_cpu($hostname);
 
                 plugin_dispatch_values({
                         plugin => 'cpu',
-                        plugin_instance => $node,
+                        plugin_instance => 'total',
                         type => 'cpu',
-                        values => [$node_value],
+                        values => [smode_cpu($hostname)],
                         interval => '30',
                         host => $hostname,
                         });
+            }
         }
     }
 

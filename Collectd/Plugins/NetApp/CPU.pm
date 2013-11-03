@@ -11,7 +11,7 @@
 package Collectd::Plugins::NetApp::CPU;
 
 use base 'Exporter';
-our @EXPORT = qw(cdot_cpu);
+our @EXPORT = qw(cdot_cpu smode_cpu);
 
 use strict;
 use warnings;
@@ -77,6 +77,38 @@ sub cdot_cpu {
 
     return \%cpu_return;
 
+}
+
+sub smode_cpu {
+
+    my $hostname = shift;
+
+    my $ConfigFile = "/etc/collectd/netapp.ini";
+    my $cfg = new Config::Simple($ConfigFile);
+    my %Config = $cfg->vars();
+
+    my $s = NaServer->new($hostname, 1, 3);
+
+    my $out = $s->set_transport_type("HTTPS");
+    $out = $s->set_style('LOGIN');
+    $out = $s->set_admin_user($Config{ $hostname . '.Username'}, $Config{ $hostname . '.Password'});
+
+    my $api = new NaElement('perf-object-get-instances');
+
+    my $xi = new NaElement('counters');
+    $api->child_add($xi);
+    $xi->child_add_string('counter','cpu_busy');
+    $api->child_add_string('objectname','system');
+    my $xo = $s->invoke_elem($api);
+
+    my $instances = $xo->child_get("instances");
+    my $instance_data = $instances->child_get("instance-data");
+    my $counters = $instance_data->child_get("counters");
+    my $counter_data = $counters->child_get("counter-data");
+
+    my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
+    
+    return $rounded_busy;
 }
 
 1;

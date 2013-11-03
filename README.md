@@ -12,10 +12,10 @@ Support for both <b>NetApp 7-Mode</b> and <b>NetApp Clustered Data ONTAP</b>.
 
 <b>Currently supported modules:</b>
 
-    * CPU
+    * <b>CPU</b>
       CPU Busy (unit is "percent", even if "jiffies" is shown)
       
-    * DF (in work)
+    * <b>DF</b> (in work)
       Volume Space Usage
 
 --

@@ -1,7 +1,7 @@
 Collectd-Plugins-NetApp
 =======================
 
-NetApp Modules for Collectd Perl Plugin.
+<b>NetApp Modules for Collectd Perl Plugin.</b>
 
 New, better and faster version of "netapp-7mode-collectd" and "netapp-cdot-collectd".
 (https://github.com/aleex42/netapp-7mode-collectd / https://github.com/aleex42/netapp-cdot-collectd).

@@ -66,6 +66,8 @@ sub my_get {
 
     foreach my $hostname (keys %hosts){
 
+    my $filer_os = $Config{ $hostname . '.Mode'}
+
 # TODO: Switch for different modules
 
             my $cpu_result = cdot_cpu($hostname);

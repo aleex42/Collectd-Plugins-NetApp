@@ -6,14 +6,17 @@ NetApp Modules for Collectd Perl Plugin.
 New, better and faster version of "netapp-7mode-collectd" and "netapp-cdot-collectd".
 (https://github.com/aleex42/netapp-7mode-collectd / https://github.com/aleex42/netapp-cdot-collectd).
 
-Support for both NetApp 7-Mode and Clustered Data ONTAP.
+Support for both <b>NetApp 7-Mode</b> and <b>NetApp Clustered Data ONTAP</b>.
 
 -- 
 
 <b>Currently supported modules:</b>
 
     * CPU
+      CPU Busy (unit is "percent", even if "jiffies" is shown)
+      
     * DF (in work)
+      Volume Space Usage
 
 --
 

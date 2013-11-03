@@ -10,4 +10,6 @@ Support for both NetApp 7-Mode and Clustered Data ONTAP.
 Currently supported modules:
 
     * CPU
+    * (DF)
 
+See sample configuration file (sample-collectd.conf) for usage.

@@ -11,11 +11,14 @@
 package Collectd::Plugins::NetApp::CPU;
 
 use base 'Exporter';
-our @EXPORT = qw(cdot_cpu smode_cpu);
+our @EXPORT = qw(cpu_module);
 
 use strict;
 use warnings;
 
+use feature qw(switch);
+
+use Collectd qw( :all );
 use Collectd::Plugins::NetApp::NACommon qw(connect_filer);
 
 use lib "/usr/lib/netapp-manageability-sdk-5.1/lib/perl/NetApp";
@@ -91,6 +94,47 @@ sub smode_cpu {
     my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
     
     return $rounded_busy;
+}
+
+sub cpu_module {
+
+    my ($hostname, $filer_os) = @_;
+
+    given ($filer_os){
+
+        when("cDOT"){
+
+            my $cpu_result = cdot_cpu($hostname);
+
+            foreach my $node (keys %$cpu_result){
+
+                my $node_value = $cpu_result->{$node};
+
+                plugin_dispatch_values({
+                        plugin => 'cpu',
+                        plugin_instance => $node,
+                        type => 'cpu',
+                        values => [$node_value],
+                        interval => '30',
+                        host => $hostname,
+                        });
+            }
+        }
+
+        default {
+
+            plugin_dispatch_values({
+                    plugin => 'cpu',
+                    plugin_instance => 'total',
+                    type => 'cpu',
+                    values => [smode_cpu($hostname)],
+                    interval => '30',
+                    host => $hostname,
+                    });
+        }
+    }
+
+    return 1;
 }
 
 1;

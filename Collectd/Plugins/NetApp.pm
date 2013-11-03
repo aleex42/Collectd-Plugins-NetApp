@@ -13,7 +13,7 @@ package Collectd::Plugins::NetApp;
 use strict;
 use warnings;
 
-use Collectd::Plugins::NetApp::CPU qw(cdot_cpu smode_cpu);
+use Collectd::Plugins::NetApp::CPU qw(cpu_module);
 
 use feature qw/switch/;
 
@@ -57,9 +57,8 @@ sub my_config {
                 for my $child (@{ $host->{children} }) {
                     if($child->{key} eq "Modules"){
                         my $modules = $child->{values};
-                        my $count = scalar @{ $modules };
-                        for my $i (0 ... $count-1){
-                            push (@{$hosts{$hostname}},$modules->[$i]);
+                        foreach my $mod (@$modules){
+                            push(@{$hosts{$hostname}}, $mod);
                         }
                     }
                 }
@@ -71,44 +70,35 @@ sub my_config {
 sub my_get {
 
     foreach my $hostname (keys %hosts){
-
+    
         my $filer_os = $Config{ $hostname . '.Mode'};
 
-# TODO: Switch for different modules
+        foreach my $mod_array ($hosts{$hostname}){
+            foreach my $module (@$mod_array){
 
-        given ($filer_os){
+                given($module){
 
-            when("cDOT"){
+                    when("CPU"){
+                        cpu_module($hostname, $filer_os);
+                    }
 
-                my $cpu_result = cdot_cpu($hostname);
-
-                foreach my $node (keys %$cpu_result){
-
-                    my $node_value = $cpu_result->{$node};
-
-                    plugin_dispatch_values({
-                            plugin => 'cpu',
-                            plugin_instance => $node,
-                            type => 'cpu',
-                            values => [$node_value],
-                            interval => '30',
-                            host => $hostname,
-                            });
-                }
-            }
-
-            default {
-
-#                my $cpu_result = smode_cpu($hostname);
-
-                plugin_dispatch_values({
-                        plugin => 'cpu',
-                        plugin_instance => 'total',
-                        type => 'cpu',
-                        values => [smode_cpu($hostname)],
+                    when("DF"){
+             
+                        plugin_dispatch_values({
+                        plugin => 'df',
+                        plugin_instance => "test-01",
+                        type => 'df',
+                        type_instance => 'test_instance',
+                        values => ['10123123123', '43523424343'],
                         interval => '30',
                         host => $hostname,
                         });
+                    }
+
+                    default {
+                        # nothing
+                    }
+                }
             }
         }
     }

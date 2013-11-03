@@ -16,6 +16,8 @@ our @EXPORT = qw(cdot_cpu smode_cpu);
 use strict;
 use warnings;
 
+use Collectd::Plugins::NetApp::NACommon qw(connect_filer);
+
 use lib "/usr/lib/netapp-manageability-sdk-5.1/lib/perl/NetApp";
 use NaServer;
 use NaElement;
@@ -27,17 +29,7 @@ sub cdot_cpu {
 
 		  my $hostname = shift;
 
-		  my $ConfigFile = "/etc/collectd/netapp.ini";
-		  my $cfg = new Config::Simple($ConfigFile);
-
-		  my %Config = $cfg->vars();
-
-		  my $s = NaServer->new( $hostname, 1, 3 );
-		  $s->set_transport_type('HTTPS');
-		  $s->set_style('LOGIN');
-		  $s->set_admin_user( $Config{ $hostname . '.Username'}, $Config{ $hostname . '.Password'});
-
-		  my $output = $s->invoke("perf-object-instance-list-info-iter", "objectname", "system");
+          my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "system");
 
 		  my $nodes = $output->child_get("attributes-list");
 		  my @result = $nodes->children_get();
@@ -62,7 +54,7 @@ sub cdot_cpu {
 					 $xi1->child_add_string('instance-uuid',$node_uuid);
 					 $api->child_add_string('objectname','system');
 
-					 my $xo = $s->invoke_elem($api);
+					 my $xo = connect_filer($hostname)->invoke_elem($api);
 
 					 my $instances = $xo->child_get("instances");
 					 my $instance_data = $instances->child_get("instance-data");
@@ -83,23 +75,13 @@ sub smode_cpu {
 
     my $hostname = shift;
 
-    my $ConfigFile = "/etc/collectd/netapp.ini";
-    my $cfg = new Config::Simple($ConfigFile);
-    my %Config = $cfg->vars();
-
-    my $s = NaServer->new($hostname, 1, 3);
-
-    my $out = $s->set_transport_type("HTTPS");
-    $out = $s->set_style('LOGIN');
-    $out = $s->set_admin_user($Config{ $hostname . '.Username'}, $Config{ $hostname . '.Password'});
-
     my $api = new NaElement('perf-object-get-instances');
 
     my $xi = new NaElement('counters');
     $api->child_add($xi);
     $xi->child_add_string('counter','cpu_busy');
     $api->child_add_string('objectname','system');
-    my $xo = $s->invoke_elem($api);
+    my $xo = connect_filer($hostname)->invoke_elem($api);
 
     my $instances = $xo->child_get("instances");
     my $instance_data = $instances->child_get("instance-data");

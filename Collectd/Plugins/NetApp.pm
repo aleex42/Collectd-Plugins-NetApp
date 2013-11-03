@@ -1,11 +1,19 @@
+# --
+# NetApp.pm - Collectd Perl Plugin for NetApp Storage Systems
+# https://github.com/aleex42/Collectd-Plugins-NetApp
+# Copyright (C) 2013 Alexander Krogloth, E-Mail: git <at> krogloth.de
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
+# --
+
 package Collectd::Plugins::NetApp;
 
 use strict;
 use warnings;
 
-use lib "/usr/lib/netapp-manageability-sdk-5.1/lib/perl/NetApp";
-use NaServer;
-use NaElement;
+use Collectd::Plugins::NetApp::CPU qw(cdot_cpu);
 
 use Data::Dumper;
 
@@ -30,11 +38,7 @@ sub my_init {
 
 sub my_config {
 
-#    use Data::Dumper;
-#    open(FILE, ">/tmp/output.txt");    
-
     my $config = shift;
-
     my @children = @{$config -> {children} };
 
     for my $host (@children){
@@ -60,69 +64,29 @@ sub my_config {
 
 sub my_get {
 
-        open(FILE, ">/tmp/output.txt");
-
     foreach my $hostname (keys %hosts){
 
-        print FILE $hostname . "\n";
+# TODO: Switch for different modules
 
-        my $ConfigFile = "/etc/collectd/netapp.ini";
-        my $cfg = new Config::Simple($ConfigFile);
+            my $cpu_result = cdot_cpu($hostname);
 
-        my %Config = $cfg->vars();
+            foreach my $node (keys %$cpu_result){
 
-        my $s = NaServer->new( $hostname, 1, 3 );
-        $s->set_transport_type('HTTPS');
-        $s->set_style('LOGIN');
-        $s->set_admin_user( $Config{ $hostname . '.Username'}, $Config{ $hostname . '.Password'});
+                my $node_value = $cpu_result->{$node};
 
-        my $output = $s->invoke("perf-object-instance-list-info-iter", "objectname", "system");
-
-        my $nodes = $output->child_get("attributes-list");
-        my @result = $nodes->children_get();
-
-        foreach my $node (@result){
-
-            my $node_uuid = $node->child_get_string("uuid");
-            my @node = split(/:/,$node_uuid);
-            my $node_name = $node[0];
-
-            my $api = new NaElement('perf-object-get-instances');
-
-            my $xi = new NaElement('counters');
-            $api->child_add($xi);
-            $xi->child_add_string('counter','cpu_busy');
-
-            my $xi1 = new NaElement('instance-uuids');
-            $api->child_add($xi1);
-
-            $xi1->child_add_string('instance-uuid',$node_uuid);
-            $api->child_add_string('objectname','system');
-
-            my $xo = $s->invoke_elem($api);
-
-            my $instances = $xo->child_get("instances");
-            my $instance_data = $instances->child_get("instance-data");
-            my $counters = $instance_data->child_get("counters");
-            my $counter_data = $counters->child_get("counter-data");
-
-            my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
-
-            plugin_dispatch_values({
-                    plugin => 'cpu',
-                    plugin_instance => $node_name,
-                    type => 'cpu',
-#                    type_instance => 'busy_percent',
-                    values => [$rounded_busy],
-                    interval => '30',
-                    host => $hostname,
-                    });
+                plugin_dispatch_values({
+                        plugin => 'cpu',
+                        plugin_instance => $node,
+                        type => 'cpu',
+                        values => [$node_value],
+                        interval => '30',
+                        host => $hostname,
+                        });
         }
-
-        return 1;
     }
 
-    close(FILE);
+    return 1;
+
 }
 
 1;

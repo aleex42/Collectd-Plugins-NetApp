@@ -12,7 +12,13 @@ Currently supported modules:
     * CPU
     * (DF)
 
-See sample configuration file (sample-collectd.conf) for usage.
+--
+
+<b>Configuration:</b>
+
+    * Config File (sample-collectd.conf)
+
+    * Credentials File (netapp.ini)
 
 --
 LICENSE AND COPYRIGHT

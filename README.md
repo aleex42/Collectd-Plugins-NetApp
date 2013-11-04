@@ -29,7 +29,7 @@ Support for both <b>NetApp 7-Mode</b> and <b>NetApp Clustered Data ONTAP</b>.
 --
 LICENSE AND COPYRIGHT
 
-Copyright (C) 2013 Alexander Krogloth, E-Mail: git < at > krogloth.de
+Copyright (C) 2013 Alexander Krogloth (noris network AG), E-Mail: git < at > krogloth.de
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published

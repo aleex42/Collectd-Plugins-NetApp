@@ -30,6 +30,11 @@ my $plugin_name = "NetApp";
 
 plugin_register(TYPE_READ, $plugin_name, 'my_get');
 plugin_register(TYPE_INIT, $plugin_name, 'my_init');
+plugin_register(TYPE_CONFIG, $plugin_name, 'my_config');
+
+sub my_config {
+    1;
+}
 
 sub my_log {
         plugin_log shift @_, join " ", "$plugin_name", @_;
@@ -41,40 +46,53 @@ sub my_init {
 
 sub my_get {
 
+open(FILE, ">>/tmp/output.txt");
+
     foreach my $hostname (keys %{ $cfg->{_DATA}}){
+
+    print FILE $hostname . "\n";
 
         my $filer_os = $Config{ $hostname . '.Mode'};
         my $modules = $Config{ $hostname . '.Modules'};
 
-        my @modules_array = @{ $modules };
+#    print FILE $filer_os;
 
-        foreach my $module (@modules_array){
+        if($modules){
 
-            given($module){
+            my @modules_array = @{ $modules };
+    
+            foreach my $module (@modules_array){
 
-                when("CPU"){
-                    cpu_module($hostname, $filer_os);
-                }
-
-                when("DF"){
-
-                    plugin_dispatch_values({
-                            plugin => 'df',
-                            plugin_instance => "test-01",
-                            type => 'df',
-                            type_instance => 'test_instance',
-                            values => ['10123123123', '43523424343'],
-                            interval => '30',
-                            host => $hostname,
-                            });
-                }
-
-                default {
-# nothing
+   # print FILE $module . "\n";
+    
+                given($module){
+    
+                    when("CPU"){
+                        cpu_module($hostname, $filer_os);
+                    }
+    
+                    when("DF"){
+    
+                        plugin_dispatch_values({
+                                plugin => 'df',
+                                plugin_instance => "test-01",
+                                type => 'df',
+                                type_instance => 'test_instance',
+                                values => ['10123123123', '43523424343'],
+                                interval => '30',
+                                host => $hostname,
+                                });
+                    }
+    
+                    default {
+    # nothing
+                    }
                 }
             }
         }
     }
+
+close(FILE);
 
 return 1;
 

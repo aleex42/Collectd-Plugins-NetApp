@@ -91,13 +91,19 @@ sub smode_cpu {
     my $xo = connect_filer($hostname)->invoke_elem($api);
 
     my $instances = $xo->child_get("instances");
-    my $instance_data = $instances->child_get("instance-data");
-    my $counters = $instance_data->child_get("counters");
-    my $counter_data = $counters->child_get("counter-data");
-
-    my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
     
-    return $rounded_busy;
+    if($instances){
+        my $instance_data = $instances->child_get("instance-data");
+        my $counters = $instance_data->child_get("counters");
+        my $counter_data = $counters->child_get("counter-data");
+
+        my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
+    
+        return $rounded_busy;
+
+    } else {
+        return undef;
+    }
 }
 
 sub cpu_module {
@@ -127,14 +133,19 @@ sub cpu_module {
 
         default {
 
-            plugin_dispatch_values({
+            my $cpu_result = smode_cpu($hostname);
+
+            if($cpu_result){
+
+                plugin_dispatch_values({
                     plugin => 'cpu',
                     plugin_instance => 'total',
                     type => 'cpu',
-                    values => [smode_cpu($hostname)],
+                    values => [$cpu_result],
                     interval => '30',
                     host => $hostname,
                     });
+            }
         }
     }
 

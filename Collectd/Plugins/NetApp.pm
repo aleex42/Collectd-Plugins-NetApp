@@ -28,9 +28,6 @@ my %Config = $cfg->vars();
 
 my $plugin_name = "NetApp";
 
-my %hosts = ();
-
-plugin_register(TYPE_CONFIG, $plugin_name, 'my_config');
 plugin_register(TYPE_READ, $plugin_name, 'my_get');
 plugin_register(TYPE_INIT, $plugin_name, 'my_init');
 
@@ -42,68 +39,44 @@ sub my_init {
     1;
 }
 
-sub my_config {
-
-    my $config = shift;
-    my @children = @{$config -> {children} };
-
-    for my $host (@children){
-
-        my $hostname;
-
-        if($host->{key}){
-            if($host->{key} eq "Host"){
-                $hostname = $host->{values}->[0];
-                for my $child (@{ $host->{children} }) {
-                    if($child->{key} eq "Modules"){
-                        my $modules = $child->{values};
-                        foreach my $mod (@$modules){
-                            push(@{$hosts{$hostname}}, $mod);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 sub my_get {
 
-    foreach my $hostname (keys %hosts){
-    
+    foreach my $hostname (keys %{ $cfg->{_DATA}}){
+
         my $filer_os = $Config{ $hostname . '.Mode'};
+        my $modules = $Config{ $hostname . '.Modules'};
 
-        foreach my $mod_array ($hosts{$hostname}){
-            foreach my $module (@$mod_array){
+        my @modules_array = @{ $modules };
 
-                given($module){
+        foreach my $module (@modules_array){
 
-                    when("CPU"){
-                        cpu_module($hostname, $filer_os);
-                    }
+            given($module){
 
-                    when("DF"){
-             
-                        plugin_dispatch_values({
-                        plugin => 'df',
-                        plugin_instance => "test-01",
-                        type => 'df',
-                        type_instance => 'test_instance',
-                        values => ['10123123123', '43523424343'],
-                        interval => '30',
-                        host => $hostname,
-                        });
-                    }
+                when("CPU"){
+                    cpu_module($hostname, $filer_os);
+                }
 
-                    default {
-                        # nothing
-                    }
+                when("DF"){
+
+                    plugin_dispatch_values({
+                            plugin => 'df',
+                            plugin_instance => "test-01",
+                            type => 'df',
+                            type_instance => 'test_instance',
+                            values => ['10123123123', '43523424343'],
+                            interval => '30',
+                            host => $hostname,
+                            });
+                }
+
+                default {
+# nothing
                 }
             }
         }
     }
 
-    return 1;
+return 1;
 
 }
 

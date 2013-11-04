@@ -14,6 +14,7 @@ use strict;
 use warnings;
 
 use Collectd::Plugins::NetApp::CPU qw(cpu_module);
+use Collectd::Plugins::NetApp::DF qw(df_module);
 
 use feature qw/switch/;
 
@@ -46,16 +47,10 @@ sub my_init {
 
 sub my_get {
 
-open(FILE, ">>/tmp/output.txt");
-
     foreach my $hostname (keys %{ $cfg->{_DATA}}){
-
-    print FILE $hostname . "\n";
 
         my $filer_os = $Config{ $hostname . '.Mode'};
         my $modules = $Config{ $hostname . '.Modules'};
-
-#    print FILE $filer_os;
 
         if($modules){
 
@@ -63,8 +58,6 @@ open(FILE, ">>/tmp/output.txt");
     
             foreach my $module (@modules_array){
 
-   # print FILE $module . "\n";
-    
                 given($module){
     
                     when("CPU"){
@@ -72,16 +65,7 @@ open(FILE, ">>/tmp/output.txt");
                     }
     
                     when("DF"){
-    
-                        plugin_dispatch_values({
-                                plugin => 'df',
-                                plugin_instance => "test-01",
-                                type => 'df',
-                                type_instance => 'test_instance',
-                                values => ['10123123123', '43523424343'],
-                                interval => '30',
-                                host => $hostname,
-                                });
+                        df_module($hostname, $filer_os);
                     }
     
                     default {
@@ -91,8 +75,6 @@ open(FILE, ">>/tmp/output.txt");
             }
         }
     }
-
-close(FILE);
 
 return 1;
 

@@ -15,7 +15,7 @@ Support for both <b>NetApp 7-Mode</b> and <b>NetApp Clustered Data ONTAP</b>.
     * CPU
       CPU Busy (unit is "percent", even if "jiffies" is shown)
       
-    * DF (in work)
+    * DF
       Volume Space Usage
 
 --

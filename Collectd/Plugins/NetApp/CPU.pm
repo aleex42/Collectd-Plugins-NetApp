@@ -30,45 +30,49 @@ use Config::Simple;
 
 sub cdot_cpu {
 
-		  my $hostname = shift;
+    my $hostname = shift;
+    my %cpu_return;
 
-          my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "system");
+    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "system");
 
-		  my $nodes = $output->child_get("attributes-list");
-		  my @result = $nodes->children_get();
+    if($output){
+        my $nodes = $output->child_get("attributes-list");
 
-          my %cpu_return;
+        if($nodes){
+            my @result = $nodes->children_get();
 
-		  foreach my $node (@result){
+            foreach my $node (@result){
 
-					 my $node_uuid = $node->child_get_string("uuid");
-					 my @node = split(/:/,$node_uuid);
-					 my $node_name = $node[0];
+                my $node_uuid = $node->child_get_string("uuid");
+                my @node = split(/:/,$node_uuid);
+                my $node_name = $node[0];
 
-					 my $api = new NaElement('perf-object-get-instances');
+                my $api = new NaElement('perf-object-get-instances');
 
-					 my $xi = new NaElement('counters');
-					 $api->child_add($xi);
-					 $xi->child_add_string('counter','cpu_busy');
+                my $xi = new NaElement('counters');
+                $api->child_add($xi);
+                $xi->child_add_string('counter','cpu_busy');
 
-					 my $xi1 = new NaElement('instance-uuids');
-					 $api->child_add($xi1);
+                my $xi1 = new NaElement('instance-uuids');
+                $api->child_add($xi1);
 
-					 $xi1->child_add_string('instance-uuid',$node_uuid);
-					 $api->child_add_string('objectname','system');
+                $xi1->child_add_string('instance-uuid',$node_uuid);
+                $api->child_add_string('objectname','system');
 
-					 my $xo = connect_filer($hostname)->invoke_elem($api);
+                my $xo = connect_filer($hostname)->invoke_elem($api);
 
-					 my $instances = $xo->child_get("instances");
-					 my $instance_data = $instances->child_get("instance-data");
-					 my $counters = $instance_data->child_get("counters");
-					 my $counter_data = $counters->child_get("counter-data");
+                my $instances = $xo->child_get("instances");
+                my $instance_data = $instances->child_get("instance-data");
+                my $counters = $instance_data->child_get("counters");
+                my $counter_data = $counters->child_get("counter-data");
 
-					 my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
+                my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
 
-                    $cpu_return{$node_name} = $rounded_busy;
+                $cpu_return{$node_name} = $rounded_busy;
+            }
+        }
 
-		  }
+    }
 
     return \%cpu_return;
 

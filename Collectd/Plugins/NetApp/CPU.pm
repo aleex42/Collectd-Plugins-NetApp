@@ -124,7 +124,7 @@ sub cpu_module {
                         plugin => 'cpu',
                         plugin_instance => $node,
                         type => 'cpu',
-                        type_instance => 'cpu_busy_new',
+                        type_instance => 'cpu_busy',
                         values => [$node_value],
                         interval => '30',
                         host => $hostname,

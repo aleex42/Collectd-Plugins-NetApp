@@ -219,7 +219,7 @@ sub df_module {
                     my @vol_value = @{ $vol_value_ref };
 
                     plugin_dispatch_values({
-                            plugin => 'df',
+                            plugin => 'df_vol',
                             plugin_instance => $vol,
                             type => 'df_complex',
                             type_instance => 'used',
@@ -229,7 +229,7 @@ sub df_module {
                             });
 
                     plugin_dispatch_values({
-                            plugin => 'df',
+                            plugin => 'df_vol',
                             plugin_instance => $vol,
                             type => 'df_complex',
                             type_instance => 'free',
@@ -253,7 +253,7 @@ sub df_module {
                     my @aggr_value = @{ $aggr_value_ref };
 
                     plugin_dispatch_values({
-                            plugin => 'df',
+                            plugin => 'df_aggr',
                             plugin_instance => $aggr,
                             type => 'df_complex',
                             type_instance => 'used',
@@ -263,7 +263,7 @@ sub df_module {
                             });
 
                     plugin_dispatch_values({
-                            plugin => 'df',
+                            plugin => 'df_aggr',
                             plugin_instance => $aggr,
                             type => 'df_complex',
                             type_instance => 'free',
@@ -273,7 +273,7 @@ sub df_module {
                             });
 
                     plugin_dispatch_values({
-                            plugin => 'aggr_iops',
+                            plugin => 'iops_aggr',
                             type => 'operations',
                             type_instance => $aggr,
                             values => [$aggr_value[2]],
@@ -293,7 +293,7 @@ sub df_module {
                     my @vol_value = @{ $vol_value_ref };
 
                     plugin_dispatch_values({
-                            plugin => 'df',
+                            plugin => 'df_vol',
                             plugin_instance => $vol,
                             type => 'df_complex',
                             type_instance => 'free',
@@ -303,7 +303,7 @@ sub df_module {
                             });
 
                     plugin_dispatch_values({
-                            plugin => 'df',
+                            plugin => 'df_vol',
                             plugin_instance => $vol,
                             type => 'df_complex',
                             type_instance => 'used',
@@ -313,7 +313,7 @@ sub df_module {
                             });
 
                     plugin_dispatch_values({
-                            plugin => 'df',
+                            plugin => 'df_vol',
                             plugin_instance => $vol,
                             type => 'df_complex',
                             type_instance => 'snap_reserve_free',
@@ -323,7 +323,7 @@ sub df_module {
                             });
 
                     plugin_dispatch_values({
-                            plugin => 'df',
+                            plugin => 'df_vol',
                             plugin_instance => $vol,
                             type => 'df_complex',
                             type_instance => 'snap_reserve_used',
@@ -333,7 +333,7 @@ sub df_module {
                             });
 
                     plugin_dispatch_values({
-                            plugin => 'df',
+                            plugin => 'df_vol',
                             plugin_instance => $vol,
                             type => 'df_complex',
                             type_instance => 'snap_norm_used',

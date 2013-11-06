@@ -28,6 +28,55 @@ use NaElement;
 use Data::Dumper;
 use Config::Simple;
 
+sub smode_vol_perf {
+
+    my $hostname = shift;
+    my %perf_return;
+
+    my $in = NaElement->new("perf-object-get-instances");
+    $in->child_add_string("objectname","volume");
+    my $counters = NaElement->new("counters");
+    $counters->child_add_string("counter","read_ops");
+    $counters->child_add_string("counter","write_ops");
+    $counters->child_add_string("counter","write_data");
+    $counters->child_add_string("counter","read_data");
+    $counters->child_add_string("counter","write_latency");
+    $counters->child_add_string("counter","read_latency");
+    $in->child_add($counters);
+
+    my $out = connect_filer($hostname)->invoke_elem($in);
+
+    my $instances_list = $out->child_get("instances");
+    my @instances = $instances_list->children_get();
+
+    foreach my $volume (@instances){
+
+        my $vol_name = $volume->child_get_string("name");
+
+        my $counters_list = $volume->child_get("counters");
+        my @counters =  $counters_list->children_get();
+
+        my $foo = $counters_list->child_get("counter-data");
+
+        my %values = (read_ops => undef, write_ops => undef, write_data => undef, read_data => undef, write_latency => undef, read_latency => undef);
+
+        foreach my $counter (@counters) {
+
+            my $key = $counter->child_get_string("name");
+
+            if (exists $values{$key}) { 
+                $values{$key} = $counter->child_get_string("value"); 
+            }
+        }
+
+        $perf_return{$vol_name} = [ $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}, $values{read_ops}, $values{write_ops} ];
+
+    }
+
+    return \%perf_return;
+}
+
+
 sub cdot_vol_df {
 
     my $hostname = shift;
@@ -190,6 +239,52 @@ sub volume_module {
         }
 
         default {
+
+
+#        $perf_return{$volume} = [ $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}, $values{read_ops}, $values{write_ops} ];
+
+
+            my $perf_result = smode_vol_perf($hostname);
+
+            if($perf_result){
+
+                foreach my $perf_vol (keys %$perf_result){
+
+                    my $perf_vol_value_ref = $perf_result->{$perf_vol};
+                    my @perf_vol_value = @{ $perf_vol_value_ref };
+                    
+                    plugin_dispatch_values({
+                            plugin => 'latency_vol',
+                            plugin_instance => $perf_vol,
+                            type => 'disk_latency',
+#                            type_instance => 'read',
+                            values => [$perf_vol_value[0], $perf_vol_value[1]],
+                            interval => '30',
+                            host => $hostname,
+                            });
+
+                    plugin_dispatch_values({
+                            plugin => 'traffic_vol',
+                            plugin_instance => $perf_vol,
+                            type => 'disk_octets',
+#                            type_instance => 'free',
+                            values => [$perf_vol_value[2], $perf_vol_value[3]],
+                            interval => '30',
+                            host => $hostname,
+                            });
+
+                    plugin_dispatch_values({
+                            plugin => 'iops_vol',
+                            plugin_instance => $perf_vol,
+                            type => 'disk_ops',
+#                            type_instance => 'free',
+                            values => [$perf_vol_value[4], $perf_vol_value[5]],
+                            interval => '30',
+                            host => $hostname,
+                            });
+                }
+
+            }
 
             my $df_result = smode_vol_df($hostname);
 

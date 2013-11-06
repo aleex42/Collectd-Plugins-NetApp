@@ -19,7 +19,7 @@ Support for both <b>NetApp 7-Mode</b> and <b>NetApp Clustered Data ONTAP</b>.
       Aggregate Space Usage and IOPs
 
     * Volume (in work)
-      Volume Space Usage and IOPs
+      Volume Space Usage, IOPs, Latency and Traffic
 
 --
 

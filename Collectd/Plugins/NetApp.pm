@@ -14,7 +14,8 @@ use strict;
 use warnings;
 
 use Collectd::Plugins::NetApp::CPU qw(cpu_module);
-use Collectd::Plugins::NetApp::DF qw(df_module);
+use Collectd::Plugins::NetApp::Volume qw(volume_module);
+use Collectd::Plugins::NetApp::Aggr qw(aggr_module);
 
 use feature qw/switch/;
 
@@ -64,10 +65,14 @@ sub my_get {
                         cpu_module($hostname, $filer_os);
                     }
     
-                    when("DF"){
-                        df_module($hostname, $filer_os);
+                    when("Aggr"){
+                        aggr_module($hostname, $filer_os);
                     }
-    
+
+                    when("Volume"){
+                        volume_module($hostname, $filer_os);
+                    }
+
                     default {
     # nothing
                     }

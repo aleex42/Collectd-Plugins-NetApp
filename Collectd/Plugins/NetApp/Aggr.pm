@@ -1,5 +1,5 @@
 # --
-# NetApp/DF.pm - Collectd Perl Plugin for NetApp Storage Systems (DF Module)
+# NetApp/Aggr.pm - Collectd Perl Plugin for NetApp Storage Systems (Aggr Module)
 # https://github.com/aleex42/Collectd-Plugins-NetApp
 # Copyright (C) 2013 Alexander Krogloth, E-Mail: git <at> krogloth.de
 # --
@@ -8,10 +8,10 @@
 # did not receive this file, see http://www.gnu.org/licenses/gpl.txt.
 # --
 
-package Collectd::Plugins::NetApp::DF;
+package Collectd::Plugins::NetApp::Aggr;
 
 use base 'Exporter';
-our @EXPORT = qw(df_module);
+our @EXPORT = qw(aggr_module);
 
 use strict;
 use warnings;
@@ -201,7 +201,31 @@ sub smode_aggr_df {
     }
 }
 
-sub df_module {
+sub cdot_aggr_df {
+
+    my $hostname = shift;
+    my %df_return;
+
+    my $output = connect_filer($hostname)->invoke("aggr-get-iter");
+
+    my $aggrs = $output->child_get("attributes-list");
+    my @result = $aggrs->children_get();
+
+    foreach my $aggr (@result){
+        my $aggr_name = $aggr->child_get_string("aggregate-name");
+        my $space = $aggr->child_get("aggr-space-attributes");
+
+        my $free = $space->child_get_int("size-available");
+        my $used = $space->child_get_int("size-used");
+
+        $df_return{$aggr_name} = [ $used, $free ];
+
+    }
+
+    return \%df_return;
+}
+
+sub aggr_module {
 
     my ($hostname, $filer_os) = @_;
 
@@ -209,35 +233,35 @@ sub df_module {
 
         when("cDOT"){
 
-            my $df_result = cdot_df($hostname);
+            my $aggr_df_result = cdot_aggr_df($hostname);
+        
+            if($aggr_df_result){
 
-            if($df_result){
+                foreach my $aggr (keys %$aggr_df_result){
 
-                foreach my $vol (keys %$df_result){
-
-                    my $vol_value_ref = $df_result->{$vol};
-                    my @vol_value = @{ $vol_value_ref };
+                    my $aggr_value_ref = $aggr_df_result->{$aggr};
+                    my @aggr_value = @{ $aggr_value_ref };
 
                     plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
+                            plugin => 'df_aggr',
+                            plugin_instance => $aggr,
                             type => 'df_complex',
                             type_instance => 'used',
-                            values => [$vol_value[0]],
+                            values => [$aggr_value[0]],
                             interval => '30',
                             host => $hostname,
                             });
 
                     plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
+                            plugin => 'df_aggr',
+                            plugin_instance => $aggr,
                             type => 'df_complex',
                             type_instance => 'free',
-                            values => [$vol_value[1]],
+                            values => [$aggr_value[1]],
                             interval => '30',
                             host => $hostname,
                             });
-                }                   
+                }
             }
         }
 
@@ -277,67 +301,6 @@ sub df_module {
                             type => 'operations',
                             type_instance => $aggr,
                             values => [$aggr_value[2]],
-                            interval => '30',
-                            host => $hostname,
-                            });
-                }
-            }
-
-            my $df_result = smode_df($hostname);
-
-            if($df_result){
-
-                foreach my $vol (keys %$df_result){
-
-                    my $vol_value_ref = $df_result->{$vol};
-                    my @vol_value = @{ $vol_value_ref };
-
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
-                            type => 'df_complex',
-                            type_instance => 'free',
-                            values => [$vol_value[0]],
-                            interval => '30',
-                            host => $hostname,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
-                            type => 'df_complex',
-                            type_instance => 'used',
-                            values => [$vol_value[1]],
-                            interval => '30',
-                            host => $hostname,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
-                            type => 'df_complex',
-                            type_instance => 'snap_reserve_free',
-                            values => [$vol_value[2]],
-                            interval => '30',
-                            host => $hostname,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
-                            type => 'df_complex',
-                            type_instance => 'snap_reserve_used',
-                            values => [$vol_value[3]],
-                            interval => '30',
-                            host => $hostname,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
-                            type => 'df_complex',
-                            type_instance => 'snap_norm_used',
-                            values => [$vol_value[4]],
                             interval => '30',
                             host => $hostname,
                             });

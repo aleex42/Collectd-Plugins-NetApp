@@ -142,7 +142,7 @@ sub cpu_module {
                     plugin => 'cpu',
                     plugin_instance => 'total',
                     type => 'cpu',
-                    type_instance => 'cpu_busy_new',
+                    type_instance => 'cpu_busy',
                     values => [$cpu_result],
                     interval => '30',
                     host => $hostname,

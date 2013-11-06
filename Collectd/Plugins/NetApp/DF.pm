@@ -56,34 +56,34 @@ sub cdot_df {
 
     if($output){
 
-            foreach my $vol (@result){
+        foreach my $vol (@result){
 
-                my $vol_state_attributes = $vol->child_get("volume-state-attributes");
+            my $vol_state_attributes = $vol->child_get("volume-state-attributes");
 
-                if($vol->child_get("volume-state-attributes")){
+            if($vol->child_get("volume-state-attributes")){
 
-                    my $vol_info = $vol->child_get("volume-id-attributes");
-                    my $vol_name = $vol_info->child_get_string("name");
+                my $vol_info = $vol->child_get("volume-id-attributes");
+                my $vol_name = $vol_info->child_get_string("name");
 
-                    if($vol_state_attributes->child_get_string("state") eq "online"){
+                if($vol_state_attributes->child_get_string("state") eq "online"){
 
-                        my $vol_space = $vol->child_get("volume-space-attributes");
+                    my $vol_space = $vol->child_get("volume-space-attributes");
 
-                        my $used = $vol_space->child_get_string("size-used");
-                        my $free = $vol_space->child_get_int("size-available");
+                    my $used = $vol_space->child_get_string("size-used");
+                    my $free = $vol_space->child_get_int("size-available");
 
-                        $df_return{$vol_name} = [ $used, $free ];
-                    }
+                    $df_return{$vol_name} = [ $used, $free ];
                 }
             }
+        }
 
-         return \%df_return;
+        return \%df_return;
 
-        } else {
+    } else {
 
         return undef;
 
-        }
+    }
 }
 
 sub smode_df {
@@ -149,9 +149,59 @@ sub smode_df {
     return \%df_return;
 }
 
-sub df_module {
+sub smode_aggr_df {
 
-    open(FILE, ">/tmp/output.txt");
+    my $hostname = shift;
+    my (%df_return, $used_space, $total_space, $total_transfers);
+
+    my $in = NaElement->new("perf-object-get-instances");
+    $in->child_add_string("objectname","aggregate");
+    my $counters = NaElement->new("counters");
+    $counters->child_add_string("counter","wv_fsinfo_blks_total");
+    $counters->child_add_string("counter","wv_fsinfo_blks_used");
+    $counters->child_add_string("counter","wv_fsinfo_blks_reserve");
+    $counters->child_add_string("counter","wv_fsinfo_blks_snap_reserve_pct");
+    $counters->child_add_string("counter","total_transfers");
+    $in->child_add($counters);
+    my $out = connect_filer($hostname)->invoke_elem($in);
+
+    my $instances_list = $out->child_get("instances");
+    if($instances_list){
+
+        my @instances = $instances_list->children_get();
+
+        foreach my $aggr (@instances){
+
+            my $aggr_name = $aggr->child_get_string("name");
+
+            my $counters_list = $aggr->child_get("counters");
+            my @counters =  $counters_list->children_get();
+
+            my %values = (wv_fsinfo_blks_total => undef, wv_fsinfo_blks_used => undef, wv_fsinfo_blks_reserve => undef, wv_fsinfo_blks_snap_reserve_pct => undef, total_transfers => undef);
+
+            foreach my $counter (@counters){
+
+                my $key = $counter->child_get_string("name");
+                if(exists $values{$key}){
+                    $values{$key} = $counter->child_get_string("value");
+                }
+            }
+
+            my $used_space = $values{wv_fsinfo_blks_used} * 4096;
+            my $usable_space = ($values{wv_fsinfo_blks_total} - $values{wv_fsinfo_blks_reserve} - $values{wv_fsinfo_blks_snap_reserve_pct} * $values{wv_fsinfo_blks_total} / 100)*4096;
+            my $free_space = $usable_space - $used_space;
+
+            $df_return{$aggr_name} = [ $used_space, $free_space, $values{total_transfers} ];
+        }
+
+        return \%df_return;
+
+    } else {
+        return undef;
+    }
+}
+
+sub df_module {
 
     my ($hostname, $filer_os) = @_;
 
@@ -192,6 +242,46 @@ sub df_module {
         }
 
         default {
+
+            my $aggr_df_result = smode_aggr_df($hostname);
+
+            if($aggr_df_result){
+
+                foreach my $aggr (keys %$aggr_df_result){
+
+                    my $aggr_value_ref = $aggr_df_result->{$aggr};
+                    my @aggr_value = @{ $aggr_value_ref };
+
+                    plugin_dispatch_values({
+                            plugin => 'df',
+                            plugin_instance => $aggr,
+                            type => 'df_complex',
+                            type_instance => 'used',
+                            values => [$aggr_value[0]],
+                            interval => '30',
+                            host => $hostname,
+                            });
+
+                    plugin_dispatch_values({
+                            plugin => 'df',
+                            plugin_instance => $aggr,
+                            type => 'df_complex',
+                            type_instance => 'free',
+                            values => [$aggr_value[1]],
+                            interval => '30',
+                            host => $hostname,
+                            });
+
+                    plugin_dispatch_values({
+                            plugin => 'aggr_iops',
+                            type => 'operations',
+                            type_instance => $aggr,
+                            values => [$aggr_value[2]],
+                            interval => '30',
+                            host => $hostname,
+                            });
+                }
+            }
 
             my $df_result = smode_df($hostname);
 
@@ -253,12 +343,10 @@ sub df_module {
                             });
                 }
             }
-        close(FILE);
-       }
+        }
     }
-    
-    return 1;
 
+    return 1;
 }
 
 1;

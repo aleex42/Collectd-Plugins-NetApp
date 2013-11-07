@@ -32,6 +32,7 @@ sub cdot_nic {
 
     my $hostname = shift;
     my %nic_return;
+    my @nics;
 
     my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "ifnet");
 
@@ -63,7 +64,7 @@ sub cdot_nic {
 
     $api->child_add_string('objectname','ifnet');
 
-    my $xo = $s->invoke_elem($api);
+    my $xo = connect_filer($hostname)->invoke_elem($api);
 
     my $instances = $xo->child_get("instances");
     my @instance_data = $instances->children_get("instance-data");
@@ -150,7 +151,7 @@ sub nic_module {
                     my @nic_value = @{ $nic_value_ref };
 
                     plugin_dispatch_values({
-                            plugin => 'interface',
+                            plugin => 'interface_new',
                             plugin_instance => $nic,
                             type => 'if_octets',
                             values => [$nic_value[0], $nic_value[1]],

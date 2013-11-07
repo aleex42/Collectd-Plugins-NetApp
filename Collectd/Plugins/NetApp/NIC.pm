@@ -31,10 +31,64 @@ use Config::Simple;
 sub cdot_nic {
 
     my $hostname = shift;
-    my %cpu_return;
+    my %nic_return;
 
-    return \%cpu_return;
+    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "ifnet");
 
+    my $volumes = $output->child_get("attributes-list");
+    my @result = $volumes->children_get();
+
+    foreach my $interface (@result){
+
+        my $if_name = $interface->child_get_string("name");
+
+        if(($if_name !~ "e0P\$") && ($if_name !~ "losk\$")){
+
+            my $uuid = $interface->child_get_string("uuid");
+            push(@nics, $uuid);
+        }
+    }
+
+    my $api = new NaElement('perf-object-get-instances');
+    my $xi = new NaElement('counters');
+    $api->child_add($xi);
+    $xi->child_add_string('counter','send_data');
+    $xi->child_add_string('counter','recv_data');
+    my $xi1 = new NaElement('instance-uuids');
+    $api->child_add($xi1);
+
+    foreach my $nic_uuid (@nics){
+        $xi1->child_add_string('instance-uuid',$nic_uuid);
+    }
+
+    $api->child_add_string('objectname','ifnet');
+
+    my $xo = $s->invoke_elem($api);
+
+    my $instances = $xo->child_get("instances");
+    my @instance_data = $instances->children_get("instance-data");
+
+    foreach my $nic (@instance_data){
+
+        my $uuid = $nic->child_get_string("uuid");
+        my @nic_id = split(/:/,$uuid);
+        my $nic_name = $nic_id[0] . "_" . $nic_id[2];
+
+        my $counters = $nic->child_get("counters");
+        my @counter_result = $counters->children_get();
+
+        my %values = (send_data => undef, recv_data => undef);
+
+        foreach my $counter (@counter_result){
+
+            my $key = $counter->child_get_string("name");
+            if(exists $values{$key}){
+                $values{$key} = $counter->child_get_string("value");
+            }
+        }
+        $nic_return{$nic_name} = [ $values{recv_data}, $values{send_data} ];
+    }
+    return \%nic_return;
 }
 
 sub smode_nic {
@@ -86,21 +140,24 @@ sub nic_module {
 
         when("cDOT"){
 
-            my $cpu_result = cdot_cpu($hostname);
+            my $nic_result = cdot_nic($hostname);
 
-            foreach my $node (keys %$cpu_result){
+            if($nic_result){
 
-                my $node_value = $cpu_result->{$node};
+                foreach my $nic (keys %$nic_result){
 
-                plugin_dispatch_values({
-                        plugin => 'cpu',
-                        plugin_instance => $node,
-                        type => 'cpu',
-                        type_instance => 'cpu_busy',
-                        values => [$node_value],
-                        interval => '30',
-                        host => $hostname,
-                        });
+                    my $nic_value_ref = $nic_result->{$nic};
+                    my @nic_value = @{ $nic_value_ref };
+
+                    plugin_dispatch_values({
+                            plugin => 'interface',
+                            plugin_instance => $nic,
+                            type => 'if_octets',
+                            values => [$nic_value[0], $nic_value[1]],
+                            interval => '30',
+                            host => $hostname,
+                            });
+                }
             }
         }
 
@@ -115,15 +172,14 @@ sub nic_module {
                     my $nic_value_ref = $nic_result->{$nic};
                     my @nic_value = @{ $nic_value_ref };
 
-                plugin_dispatch_values({
-                    plugin => 'interface',
-                    plugin_instance => $nic,
-                    type => 'if_octets',
-#                    type_instance => '',
-                    values => [$nic_value[0], $nic_value[1]],
-                    interval => '30',
-                    host => $hostname,
-                    });
+                    plugin_dispatch_values({
+                            plugin => 'interface',
+                            plugin_instance => $nic,
+                            type => 'if_octets',
+                            values => [$nic_value[0], $nic_value[1]],
+                            interval => '30',
+                            host => $hostname,
+                            });
                 }
             }
         }

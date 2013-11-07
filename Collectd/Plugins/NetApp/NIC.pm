@@ -78,7 +78,7 @@ sub smode_nic {
 
 }
 
-sub cpu_module {
+sub nic_module {
 
     my ($hostname, $filer_os) = @_;
 
@@ -124,7 +124,7 @@ sub cpu_module {
                     interval => '30',
                     host => $hostname,
                     });
-
+                }
             }
         }
     }

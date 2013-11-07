@@ -73,7 +73,7 @@ sub cdot_nic {
 
         my $uuid = $nic->child_get_string("uuid");
         my @nic_id = split(/:/,$uuid);
-        my $nic_name = $nic_id[0] . "_" . $nic_id[2];
+        my $nic_name = $nic_id[0] . "-" . $nic_id[2];
 
         my $counters = $nic->child_get("counters");
         my @counter_result = $counters->children_get();

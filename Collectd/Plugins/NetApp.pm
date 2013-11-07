@@ -16,6 +16,7 @@ use warnings;
 use Collectd::Plugins::NetApp::CPU qw(cpu_module);
 use Collectd::Plugins::NetApp::Volume qw(volume_module);
 use Collectd::Plugins::NetApp::Aggr qw(aggr_module);
+use Collectd::Plugins::NetApp::NIC qw(nic_module);
 
 use feature qw/switch/;
 
@@ -71,6 +72,10 @@ sub my_get {
 
                     when("Volume"){
                         volume_module($hostname, $filer_os);
+                    }
+
+                    when("NIC"){
+                        nic_module($hostname, $filer_os);
                     }
 
                     default {

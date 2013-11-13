@@ -8,6 +8,8 @@ New, better and faster version of "netapp-7mode-collectd" and "netapp-cdot-colle
 
 Support for both <b>NetApp 7-Mode</b> and <b>NetApp Clustered Data ONTAP</b>.
 
+You need the NetApp Manageability SDK in "/usr/lib/netapp-manageability-sdk-5.1/lib/perl/NetApp".
+
 -- 
 
 <b>Currently supported modules:</b>
@@ -28,9 +30,9 @@ Support for both <b>NetApp 7-Mode</b> and <b>NetApp Clustered Data ONTAP</b>.
 
 <b>Configuration:</b>
 
-    * Config File (sample-collectd.conf)
+    * Config File (/etc/collectd/sample-collectd.conf)
 
-    * Credentials File (netapp.ini)
+    * Credentials File (/etc/collectd/netapp.ini)
 
 --
 LICENSE AND COPYRIGHT

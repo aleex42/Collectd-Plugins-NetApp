@@ -101,9 +101,10 @@ sub cdot_vol_df {
     my $output = connect_filer($hostname)->invoke_elem($api);
 
     my $volumes = $output->child_get("attributes-list");
-    my @result = $volumes->children_get();
 
-    if($output){
+    if($volumes){
+
+    my @result = $volumes->children_get();
 
         foreach my $vol (@result){
 

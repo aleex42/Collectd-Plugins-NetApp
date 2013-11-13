@@ -36,60 +36,66 @@ sub cdot_nic {
 
     my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "ifnet");
 
-    my $volumes = $output->child_get("attributes-list");
-    my @result = $volumes->children_get();
+    my $nics = $output->child_get("attributes-list");
 
-    foreach my $interface (@result){
+    if($nics){
 
-        my $if_name = $interface->child_get_string("name");
-
-        if(($if_name !~ "e0P\$") && ($if_name !~ "losk\$")){
-
-            my $uuid = $interface->child_get_string("uuid");
-            push(@nics, $uuid);
-        }
-    }
-
-    my $api = new NaElement('perf-object-get-instances');
-    my $xi = new NaElement('counters');
-    $api->child_add($xi);
-    $xi->child_add_string('counter','send_data');
-    $xi->child_add_string('counter','recv_data');
-    my $xi1 = new NaElement('instance-uuids');
-    $api->child_add($xi1);
-
-    foreach my $nic_uuid (@nics){
-        $xi1->child_add_string('instance-uuid',$nic_uuid);
-    }
-
-    $api->child_add_string('objectname','ifnet');
-
-    my $xo = connect_filer($hostname)->invoke_elem($api);
-
-    my $instances = $xo->child_get("instances");
-    my @instance_data = $instances->children_get("instance-data");
-
-    foreach my $nic (@instance_data){
-
-        my $uuid = $nic->child_get_string("uuid");
-        my @nic_id = split(/:/,$uuid);
-        my $nic_name = $nic_id[0] . "-" . $nic_id[2];
-
-        my $counters = $nic->child_get("counters");
-        my @counter_result = $counters->children_get();
-
-        my %values = (send_data => undef, recv_data => undef);
-
-        foreach my $counter (@counter_result){
-
-            my $key = $counter->child_get_string("name");
-            if(exists $values{$key}){
-                $values{$key} = $counter->child_get_string("value");
+        my @result = $nics->children_get();
+    
+        foreach my $interface (@result){
+    
+            my $if_name = $interface->child_get_string("name");
+    
+            if(($if_name !~ "e0P\$") && ($if_name !~ "losk\$")){
+    
+                my $uuid = $interface->child_get_string("uuid");
+                push(@nics, $uuid);
             }
         }
-        $nic_return{$nic_name} = [ $values{recv_data}, $values{send_data} ];
+    
+        my $api = new NaElement('perf-object-get-instances');
+        my $xi = new NaElement('counters');
+        $api->child_add($xi);
+        $xi->child_add_string('counter','send_data');
+        $xi->child_add_string('counter','recv_data');
+        my $xi1 = new NaElement('instance-uuids');
+        $api->child_add($xi1);
+    
+        foreach my $nic_uuid (@nics){
+            $xi1->child_add_string('instance-uuid',$nic_uuid);
+        }
+    
+        $api->child_add_string('objectname','ifnet');
+    
+        my $xo = connect_filer($hostname)->invoke_elem($api);
+    
+        my $instances = $xo->child_get("instances");
+        my @instance_data = $instances->children_get("instance-data");
+    
+        foreach my $nic (@instance_data){
+    
+            my $uuid = $nic->child_get_string("uuid");
+            my @nic_id = split(/:/,$uuid);
+            my $nic_name = $nic_id[0] . "-" . $nic_id[2];
+    
+            my $counters = $nic->child_get("counters");
+            my @counter_result = $counters->children_get();
+    
+            my %values = (send_data => undef, recv_data => undef);
+    
+            foreach my $counter (@counter_result){
+    
+                my $key = $counter->child_get_string("name");
+                if(exists $values{$key}){
+                    $values{$key} = $counter->child_get_string("value");
+                }
+            }
+            $nic_return{$nic_name} = [ $values{recv_data}, $values{send_data} ];
+        }
+        return \%nic_return;
+    } else {
+        return undef;
     }
-    return \%nic_return;
 }
 
 sub smode_nic {

@@ -209,20 +209,24 @@ sub cdot_aggr_df {
     my $output = connect_filer($hostname)->invoke("aggr-get-iter");
 
     my $aggrs = $output->child_get("attributes-list");
+
+    if($aggrs){
     my @result = $aggrs->children_get();
 
     foreach my $aggr (@result){
-        my $aggr_name = $aggr->child_get_string("aggregate-name");
-        my $space = $aggr->child_get("aggr-space-attributes");
+            my $aggr_name = $aggr->child_get_string("aggregate-name");
+            my $space = $aggr->child_get("aggr-space-attributes");
 
-        my $free = $space->child_get_int("size-available");
-        my $used = $space->child_get_int("size-used");
+            my $free = $space->child_get_int("size-available");
+            my $used = $space->child_get_int("size-used");
 
-        $df_return{$aggr_name} = [ $used, $free ];
+            $df_return{$aggr_name} = [ $used, $free ];
+        }
 
+        return \%df_return;
+    } else { 
+        return undef;
     }
-
-    return \%df_return;
 }
 
 sub aggr_module {

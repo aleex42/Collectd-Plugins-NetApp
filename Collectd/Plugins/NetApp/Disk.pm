@@ -28,7 +28,9 @@ use NaElement;
 use Data::Dumper;
 use Config::Simple;
 
-sub smode_disk {
+sub cdot_disk {
+    
+    my $hostname = shift;
 
     my $api = new NaElement('storage-disk-get-iter');
     my $xi = new NaElement('desired-attributes');
@@ -47,24 +49,37 @@ sub smode_disk {
 
     my $disk_output = connect_filer($hostname)->invoke_elem($api);
 
+use Data::Dumper;
+open(FILE, ">/tmp/output.txt");
+
+print FILE Dumper($disk_output);
+
+close(FILE);
+
     my $disks = $disk_output->child_get("attributes-list");
-    my @disk_result = $disks->children_get();
+
+
+
 
     my %max_percent;
     my %disk_list = ();
 
-    foreach my $disk (@disk_result){
-
-        my $raid_info = $disk->child_get("disk-raid-info");
-        my $disk_uuid = $raid_info->child_get_int("disk-uid");
-
-        if($raid_info->child_get("disk-aggregate-info")){
-
-            my $aggr_info = $raid_info->child_get("disk-aggregate-info");
-            my $aggr_name = $aggr_info->child_get_int("aggregate-name");
-
-            push (@{$disk_list{$aggr_name}}, $disk_uuid);
-
+    if($disks){
+        my @disk_result = $disks->children_get();
+    
+        foreach my $disk (@disk_result){
+    
+            my $raid_info = $disk->child_get("disk-raid-info");
+            my $disk_uuid = $raid_info->child_get_int("disk-uid");
+    
+            if($raid_info->child_get("disk-aggregate-info")){
+    
+                my $aggr_info = $raid_info->child_get("disk-aggregate-info");
+                my $aggr_name = $aggr_info->child_get_int("aggregate-name");
+    
+                push (@{$disk_list{$aggr_name}}, $disk_uuid);
+    
+            }
         }
     }
 
@@ -88,56 +103,62 @@ sub smode_disk {
 
     my $instances = $perf_output->child_get("instances");
 
-    my @instance_result = $instances->children_get();
-
     my %disk_perf = ();
-
-    foreach my $instance (@instance_result){
-
-        my $counters = $instance->child_get("counters");
-        my @result = $counters->children_get();
-
-        my %values = (disk_busy => undef, base_for_disk_busy => undef);
-
-        foreach my $counter (@result){
-            my $key = $counter->child_get_string("name");
-            if(exists $values{$key}){
-                $values{$key} = $counter->child_get_string("value");
-            }
-        }
-        my $uuid = $instance->child_get_string("uuid");
-        $disk_perf{$uuid} = "$values{disk_busy}, $values{base_for_disk_busy}";
     
+    if($instances){
+
+        my @instance_result = $instances->children_get();
+    
+        foreach my $instance (@instance_result){
+    
+            my $counters = $instance->child_get("counters");
+            my @result = $counters->children_get();
+    
+            my %values = (disk_busy => undef, base_for_disk_busy => undef);
+    
+            foreach my $counter (@result){
+                my $key = $counter->child_get_string("name");
+                if(exists $values{$key}){
+                    $values{$key} = $counter->child_get_string("value");
+                }
+            }
+            my $uuid = $instance->child_get_string("uuid");
+            $disk_perf{$uuid} = "$values{disk_busy}, $values{base_for_disk_busy}";
+        
+        }
     }
 
 #########
 
     sleep(20);
 
-    my $second_perf_output = $s->invoke_elem($perf_api);
+    my $second_perf_output = connect_filer($hostname)->invoke_elem($perf_api);
 
     my $second_instances = $second_perf_output->child_get("instances");
 
-    my @second_instance_result = $second_instances->children_get();
-
     my %second_disk_perf = ();
 
-    foreach my $second_instance (@second_instance_result){
+    if($instances && $second_instances){
 
-        my $second_counters = $second_instance->child_get("counters");
-        my @second_result = $second_counters->children_get();
-
-        my %second_values = (disk_busy => undef, base_for_disk_busy => undef);
-
-        foreach my $second_counter (@second_result){
-            my $second_key = $second_counter->child_get_string("name");
-            if(exists $second_values{$second_key}){
-                $second_values{$second_key} = $second_counter->child_get_string("value");
+        my @second_instance_result = $second_instances->children_get();
+    
+        foreach my $second_instance (@second_instance_result){
+    
+            my $second_counters = $second_instance->child_get("counters");
+            my @second_result = $second_counters->children_get();
+    
+            my %second_values = (disk_busy => undef, base_for_disk_busy => undef);
+    
+            foreach my $second_counter (@second_result){
+                my $second_key = $second_counter->child_get_string("name");
+                if(exists $second_values{$second_key}){
+                    $second_values{$second_key} = $second_counter->child_get_string("value");
+                }
             }
+    
+            my $second_uuid = $second_instance->child_get_string("uuid");
+            $second_disk_perf{$second_uuid} = "$second_values{disk_busy}, $second_values{base_for_disk_busy}";
         }
-
-        my $second_uuid = $second_instance->child_get_string("uuid");
-        $second_disk_perf{$second_uuid} = "$second_values{disk_busy}, $second_values{base_for_disk_busy}";
     }
 
 ###########
@@ -176,31 +197,22 @@ sub disk_module {
 
         when("cDOT"){
 
-            my $aggr_df_result = cdot_disk($hostname);
+            my $disk_result = cdot_disk($hostname);
 
-            if($aggr_df_result){
+            if($disk_result){
 
-                foreach my $aggr (keys %$aggr_df_result){
+                foreach my $aggr (keys %$disk_result){
 
-                    my $aggr_value_ref = $aggr_df_result->{$aggr};
-                    my @aggr_value = @{ $aggr_value_ref };
-
-                    plugin_dispatch_values({
-                            plugin => 'df_aggr',
-                            plugin_instance => $aggr,
-                            type => 'df_complex',
-                            type_instance => 'used',
-                            values => [$aggr_value[0]],
-                            interval => '30',
-                            host => $hostname,
-                            });
+#                    my $aggr_value_ref = $aggr_df_result->{$aggr};
+#                    my @aggr_value = @{ $aggr_value_ref };
+                    my $aggr_value = $disk_result->{$aggr};
 
                     plugin_dispatch_values({
-                            plugin => 'df_aggr',
-                            plugin_instance => $aggr,
-                            type => 'df_complex',
-                            type_instance => 'free',
-                            values => [$aggr_value[1]],
+                            plugin => 'disk_busy',
+#                            plugin_instance => $aggr,
+                            type => 'percent',
+                            type_instance => $aggr,
+                            values => [$aggr_value],
                             interval => '30',
                             host => $hostname,
                             });
@@ -223,7 +235,7 @@ sub disk_module {
                     plugin_dispatch_values({
                             plugin => 'disk_busy',
                             type => 'percent',
-                            type_instance => $aggr,
+#                            type_instance => $aggr,
                             values => [$aggr_value],
                             interval => '30',
                             host => $hostname,

@@ -48,18 +48,7 @@ sub cdot_disk {
     $api->child_add($xi12);
 
     my $disk_output = connect_filer($hostname)->invoke_elem($api);
-
-use Data::Dumper;
-open(FILE, ">/tmp/output.txt");
-
-print FILE Dumper($disk_output);
-
-close(FILE);
-
     my $disks = $disk_output->child_get("attributes-list");
-
-
-
 
     my %max_percent;
     my %disk_list = ();
@@ -128,9 +117,9 @@ close(FILE);
         }
     }
 
-#########
-
-    sleep(20);
+    sleep(25);
+# at the moment no better idea how to calculate the diff
+# maybe possible via RRDtool
 
     my $second_perf_output = connect_filer($hostname)->invoke_elem($perf_api);
 
@@ -160,8 +149,6 @@ close(FILE);
             $second_disk_perf{$second_uuid} = "$second_values{disk_busy}, $second_values{base_for_disk_busy}";
         }
     }
-
-###########
 
     foreach my $aggr (keys %disk_list){
         foreach my $disk_id (@{$disk_list{$aggr}}){
@@ -203,13 +190,10 @@ sub disk_module {
 
                 foreach my $aggr (keys %$disk_result){
 
-#                    my $aggr_value_ref = $aggr_df_result->{$aggr};
-#                    my @aggr_value = @{ $aggr_value_ref };
                     my $aggr_value = $disk_result->{$aggr};
 
                     plugin_dispatch_values({
                             plugin => 'disk_busy',
-#                            plugin_instance => $aggr,
                             type => 'percent',
                             type_instance => $aggr,
                             values => [$aggr_value],

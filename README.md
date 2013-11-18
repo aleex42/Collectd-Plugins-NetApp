@@ -26,6 +26,8 @@ You need the NetApp Manageability SDK in "/usr/lib/netapp-manageability-sdk-5.1/
     * NIC
       Network Interface Traffic
 
+    * Disk (in work)
+      Disk Busy per Aggregate
 --
 
 <b>Configuration:</b>

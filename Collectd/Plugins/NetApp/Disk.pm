@@ -252,7 +252,7 @@ sub disk_module {
 
                     plugin_dispatch_values({
                             plugin => 'disk_busy',
-                            type => 'percent',
+                            type => 'netapp_disk_busy',
                             type_instance => $aggr,
                             values => [$aggr_value],
                             interval => '30',
@@ -275,7 +275,7 @@ sub disk_module {
 
                     plugin_dispatch_values({
                             plugin => 'disk_busy',
-                            type => 'percent',
+                            type => 'netapp_disk_busy',
                             type_instance => $aggr,
                             values => [@aggr_value],
                             interval => '30',

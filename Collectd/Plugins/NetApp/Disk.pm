@@ -79,12 +79,6 @@ sub smode_disk {
                 }
             }
         }
-
-    open(FILE, ">/tmp/output.txt");
-    use Data::Dumper;
-    print FILE Dumper(%max_percent);
-    close(FILE);
-
         return \%max_percent;
     } else {
         return undef;

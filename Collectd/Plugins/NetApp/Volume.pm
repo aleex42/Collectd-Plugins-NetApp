@@ -330,8 +330,8 @@ sub volume_module {
                             interval => '30',
                             host => $hostname,
                             });
-
-    
+                }
+            }
         }
 
         default {

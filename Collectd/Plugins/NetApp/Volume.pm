@@ -76,6 +76,85 @@ sub smode_vol_perf {
     return \%perf_return;
 }
 
+sub cdot_vol_perf {
+
+    my $hostname = shift;
+    my %perf_return;
+
+    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "workload");
+
+    open(FILE, ">/tmp/output.txt");
+    use Data::Dumper;
+#    print FILE Dumper($output);
+
+    my $volumes = $output->child_get("attributes-list");
+    my @result = $volumes->children_get();
+
+    my $api = new NaElement('perf-object-get-instances');
+    
+#    my $xi = new NaElement('counters');
+#    $api->child_add($xi);
+#    $xi->child_add_string('counter','write_ops');
+#    $xi->child_add_string('counter','read_ops');
+    
+    my $xi1 = new NaElement('instance-uuids');
+    $api->child_add($xi1);
+
+    foreach (@result){
+        my $id = $_->child_get_string("uuid");         
+        $xi1->child_add_string('instance-uuid',$id);
+    }
+
+    $api->child_add_string('objectname','workload');
+    
+    my $xo = connect_filer($hostname)->invoke_elem($api);
+
+    print FILE Dumper($xo);
+    close(FILE);
+
+
+#    my $in = NaElement->new("perf-object-get-instances");
+#    $in->child_add_string("objectname","volume");
+#    my $counters = NaElement->new("counters");
+#    $counters->child_add_string("counter","read_ops");
+#    $counters->child_add_string("counter","write_ops");
+#    $counters->child_add_string("counter","write_data");
+#    $counters->child_add_string("counter","read_data");
+#    $counters->child_add_string("counter","write_latency");
+#    $counters->child_add_string("counter","read_latency");
+#    $in->child_add($counters);
+#
+#    my $out = connect_filer($hostname)->invoke_elem($in);
+#
+#    my $instances_list = $out->child_get("instances");
+#    my @instances = $instances_list->children_get();
+#
+#    foreach my $volume (@instances){
+#
+#        my $vol_name = $volume->child_get_string("name");
+#
+#        my $counters_list = $volume->child_get("counters");
+#        my @counters =  $counters_list->children_get();
+#
+#        my $foo = $counters_list->child_get("counter-data");
+#
+#        my %values = (read_ops => undef, write_ops => undef, write_data => undef, read_data => undef, write_latency => undef, read_latency => undef);
+#
+#        foreach my $counter (@counters) {
+#
+#            my $key = $counter->child_get_string("name");
+#
+#            if (exists $values{$key}) {
+#                $values{$key} = $counter->child_get_string("value");
+#            }
+#        }
+#
+#        $perf_return{$vol_name} = [ $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}, $values{read_ops}, $values{write_ops} ];
+#
+#    }
+
+    return \%perf_return;
+}
 
 sub cdot_vol_df {
 
@@ -237,6 +316,9 @@ sub volume_module {
                             });
                 }                   
             }
+
+            my $perf_result = cdot_vol_perf($hostname);
+    
         }
 
         default {

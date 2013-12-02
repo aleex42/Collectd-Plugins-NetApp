@@ -321,7 +321,7 @@ sub volume_module {
                             plugin_instance => $perf_vol,
                             type => 'disk_ops',
 #                            type_instance => 'free',
-                            values => [$perf_vol_value[4], $perf_vol_value[5]],
+                            values => [$perf_vol_value[0], $perf_vol_value[1]],
                             interval => '30',
                             host => $hostname,
                             });

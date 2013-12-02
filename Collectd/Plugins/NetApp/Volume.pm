@@ -317,7 +317,7 @@ sub volume_module {
 #                            });
 
                     plugin_dispatch_values({
-                            plugin => 'new_iops_vol',
+                            plugin => 'iops_vol',
                             plugin_instance => $perf_vol,
                             type => 'disk_ops',
 #                            type_instance => 'free',

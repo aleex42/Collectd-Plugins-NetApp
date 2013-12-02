@@ -81,7 +81,7 @@ sub cdot_vol_perf {
     my $hostname = shift;
     my %perf_return;
 
-    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "workload");
+    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "volume");
 
     my $volumes = $output->child_get("attributes-list");
     my @result = $volumes->children_get();
@@ -99,7 +99,7 @@ sub cdot_vol_perf {
         $xi1->child_add_string('instance-uuid',$id);
     }
 
-    $api->child_add_string('objectname','workload');
+    $api->child_add_string('objectname','volume');
     
     my $xo = connect_filer($hostname)->invoke_elem($api);
     my $instances_list = $xo->child_get("instances");
@@ -108,25 +108,20 @@ sub cdot_vol_perf {
     foreach my $volume (@instances){
         
         my $vol_name = $volume->child_get_string("name");
-        $vol_name =~ s/-wid[0-9].*//;
+        my $counters_list = $volume->child_get("counters");
+        my @counters =  $counters_list->children_get();
 
-        if($vol_name =~ m/^vol/){
+        my %values = (read_ops => undef, write_ops => undef);
 
-            my $counters_list = $volume->child_get("counters");
-            my @counters =  $counters_list->children_get();
-
-            my %values = (read_ops => undef, write_ops => undef);
-
-            foreach my $counter (@counters) {
+        foreach my $counter (@counters) {
     
-                my $key = $counter->child_get_string("name");
+            my $key = $counter->child_get_string("name");
 
-                if (exists $values{$key}) {
-                    $values{$key} = $counter->child_get_string("value");
-                }
+            if (exists $values{$key}) {
+                $values{$key} = $counter->child_get_string("value");
             }
-            $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops} ];
         }
+    $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops} ];
     }
     return \%perf_return;
 }

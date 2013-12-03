@@ -69,7 +69,22 @@ sub smode_vol_perf {
             }
         }
 
-        $perf_return{$vol_name} = [ $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}, $values{read_ops}, $values{write_ops} ];
+        my ($read_latency, $write_latency);
+
+        if($values{read_ops} > 0){
+            $read_latency = $values{read_latency}/$values{read_ops}/1000;
+        } else {
+            $read_latency = 0;
+        }
+
+        if($values{write_ops} > 0){
+            $write_latency = $values{write_latency}/$values{write_ops}/1000;
+        } else {
+            $write_latency = 0;
+        }
+
+#        $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $read_latency, $write_latency, $values{read_data}, $values{write_data} ];
+        $perf_return{$vol_name} = [ $read_latency, $write_latency, $values{read_data}, $values{write_data}, $values{read_ops}, $values{write_ops} ];
 
     }
 
@@ -91,6 +106,12 @@ sub cdot_vol_perf {
     $api->child_add($xi);
     $xi->child_add_string('counter','write_ops');
     $xi->child_add_string('counter','read_ops');
+    $xi->child_add_string('counter','read_data');
+    $xi->child_add_string('counter','write_data');
+    $xi->child_add_string('counter','avg_latency');
+    $xi->child_add_string('counter','total_ops');
+    $xi->child_add_string('counter','read_latency');
+    $xi->child_add_string('counter','write_latency');
     my $xi1 = new NaElement('instance-uuids');
     $api->child_add($xi1);
 
@@ -111,7 +132,7 @@ sub cdot_vol_perf {
         my $counters_list = $volume->child_get("counters");
         my @counters =  $counters_list->children_get();
 
-        my %values = (read_ops => undef, write_ops => undef);
+        my %values = (read_ops => undef, write_ops => undef, write_data => undef, read_data => undef, read_latency => undef, write_latency => undef);
 
         foreach my $counter (@counters) {
     
@@ -121,7 +142,23 @@ sub cdot_vol_perf {
                 $values{$key} = $counter->child_get_string("value");
             }
         }
-    $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops} ];
+
+        my ($read_latency, $write_latency);
+    
+        if($values{read_ops} > 0){
+            $read_latency = $values{read_latency}/$values{read_ops}/1000;
+        } else {
+            $read_latency = 0;
+        }
+
+        if($values{write_ops} > 0){
+            $write_latency = $values{write_latency}/$values{write_ops}/1000;
+        } else {
+            $write_latency = 0;
+        }
+        
+        $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $read_latency, $write_latency, $values{read_data}, $values{write_data} ];
+
     }
     return \%perf_return;
 }
@@ -293,34 +330,33 @@ sub volume_module {
 
                 foreach my $perf_vol (keys %$perf_result){
 
+#        $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $read_latency, $write_latency, $values{read_data}, $values{write_data} ];
+
                     my $perf_vol_value_ref = $perf_result->{$perf_vol};
                     my @perf_vol_value = @{ $perf_vol_value_ref };
                     
-#                    plugin_dispatch_values({
-#                            plugin => 'latency_vol',
-#                            plugin_instance => $perf_vol,
-#                            type => 'disk_latency',
-##                            type_instance => 'read',
-#                            values => [$perf_vol_value[0], $perf_vol_value[1]],
-#                            interval => '30',
-#                            host => $hostname,
-#                            });
+                    plugin_dispatch_values({
+                           plugin => 'newer_latency_vol',
+                            plugin_instance => $perf_vol,
+                            type => 'netapp_vol_latency',
+                            values => [$perf_vol_value[3], $perf_vol_value[4], $perf_vol_value[0], $perf_vol_value[1]],
+                            interval => '30',
+                            host => $hostname,
+                            });
 
-#                    plugin_dispatch_values({
-#                            plugin => 'traffic_vol',
-#                            plugin_instance => $perf_vol,
-#                            type => 'disk_octets',
-##                            type_instance => 'free',
-#                            values => [$perf_vol_value[2], $perf_vol_value[3]],
-#                            interval => '30',
-#                            host => $hostname,
-#                            });
+                    plugin_dispatch_values({
+                            plugin => 'new_traffic_vol',
+                            plugin_instance => $perf_vol,
+                            type => 'disk_octets',
+                            values => [$perf_vol_value[5], $perf_vol_value[6]],
+                            interval => '30',
+                            host => $hostname,
+                            });
 
                     plugin_dispatch_values({
                             plugin => 'iops_vol',
                             plugin_instance => $perf_vol,
                             type => 'disk_ops',
-#                            type_instance => 'free',
                             values => [$perf_vol_value[0], $perf_vol_value[1]],
                             interval => '30',
                             host => $hostname,
@@ -344,7 +380,6 @@ sub volume_module {
                             plugin => 'latency_vol',
                             plugin_instance => $perf_vol,
                             type => 'disk_latency',
-#                            type_instance => 'read',
                             values => [$perf_vol_value[0], $perf_vol_value[1]],
                             interval => '30',
                             host => $hostname,
@@ -354,7 +389,6 @@ sub volume_module {
                             plugin => 'traffic_vol',
                             plugin_instance => $perf_vol,
                             type => 'disk_octets',
-#                            type_instance => 'free',
                             values => [$perf_vol_value[2], $perf_vol_value[3]],
                             interval => '30',
                             host => $hostname,
@@ -364,7 +398,6 @@ sub volume_module {
                             plugin => 'iops_vol',
                             plugin_instance => $perf_vol,
                             type => 'disk_ops',
-#                            type_instance => 'free',
                             values => [$perf_vol_value[4], $perf_vol_value[5]],
                             interval => '30',
                             host => $hostname,

@@ -330,8 +330,6 @@ sub volume_module {
 
                 foreach my $perf_vol (keys %$perf_result){
 
-#        $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $read_latency, $write_latency, $values{read_data}, $values{write_data} ];
-
                     my $perf_vol_value_ref = $perf_result->{$perf_vol};
                     my @perf_vol_value = @{ $perf_vol_value_ref };
                     
@@ -345,7 +343,7 @@ sub volume_module {
                             });
 
                     plugin_dispatch_values({
-                            plugin => 'new_traffic_vol',
+                            plugin => 'traffic_vol',
                             plugin_instance => $perf_vol,
                             type => 'disk_octets',
                             values => [$perf_vol_value[5], $perf_vol_value[6]],

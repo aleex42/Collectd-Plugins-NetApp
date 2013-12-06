@@ -45,7 +45,7 @@ You need the NetApp Manageability SDK in "/usr/lib/netapp-manageability-sdk-5.1/
 
 Disk Busy, Flash Pool Hit-Ratio and Volume Latency are using custom RRDtool-Types.
 
-For more information see the custom_types.db
+For more information see the custom-types.db
 
 --
 LICENSE AND COPYRIGHT

@@ -1,0 +1,3 @@
+netapp_disk_busy        disk_busy:COUNTER:0:U, base:COUNTER:0:U
+netapp_vol_latency      read_latency:GAUGE:0:U, write_latency:GAUGE:0:U, read_ops:GAUGE:0:U, write_ops:GAUGE:0:U
+netapp_flash_usage      user_read:COUNTER:0:U, user_read_ssd:COUNTER:0:U, user_write:COUNTER:0:U, user_write_ssd:COUNTER:0:U

@@ -29,7 +29,7 @@ You need the NetApp Manageability SDK in "/usr/lib/netapp-manageability-sdk-5.1/
     * Disk (in work)
       Disk Busy per Aggregate
 
-    * Flash Pool Hit-Ratio
+    * Flash Pool Hit-Ratio (currently only cDOT)
       Hit-Ratio (read/write) for Hybrid Aggregates
 --
 

@@ -144,48 +144,53 @@ sub cdot_disk {
     my $perf_output = connect_filer($hostname)->invoke_elem($perf_api);
 
     my $instances = $perf_output->child_get("instances");
-    my @instance_result = $instances->children_get();
-
-    my %disk_perf = ();
-
-    foreach my $instance (@instance_result){
-
-        my $counters = $instance->child_get("counters");
-        my @result = $counters->children_get();
-
-        my %values = (disk_busy => undef, base_for_disk_busy => undef);
-
-        foreach my $counter (@result){
-            my $key = $counter->child_get_string("name");
-            if(exists $values{$key}){
-                $values{$key} = $counter->child_get_string("value");
+    if($instances){
+    
+        my @instance_result = $instances->children_get();
+    
+        my %disk_perf = ();
+    
+        foreach my $instance (@instance_result){
+    
+            my $counters = $instance->child_get("counters");
+            my @result = $counters->children_get();
+    
+            my %values = (disk_busy => undef, base_for_disk_busy => undef);
+    
+            foreach my $counter (@result){
+                my $key = $counter->child_get_string("name");
+                if(exists $values{$key}){
+                    $values{$key} = $counter->child_get_string("value");
+                }
             }
+            my $uuid = $instance->child_get_string("uuid");
+            $disk_perf{$uuid} = "$values{disk_busy}, $values{base_for_disk_busy}";
+    
         }
-        my $uuid = $instance->child_get_string("uuid");
-        $disk_perf{$uuid} = "$values{disk_busy}, $values{base_for_disk_busy}";
 
-    }
-
-    foreach my $aggr (keys %disk_list){
-        foreach my $disk_id (@{$disk_list{$aggr}}){
-
-            my @disk_perf_values = split(/,/, $disk_perf{$disk_id});
-            my $disk_busy = $disk_perf_values[0];
-            my $base_for_disk_busy = $disk_perf_values[1];
-
-            if ($max_percent{$aggr}){
-                my $ref = $max_percent{$aggr};
-                my @busy_value = @{ $ref };
-
-                if ($disk_busy > $busy_value[0]){
+        foreach my $aggr (keys %disk_list){
+            foreach my $disk_id (@{$disk_list{$aggr}}){
+    
+                my @disk_perf_values = split(/,/, $disk_perf{$disk_id});
+                my $disk_busy = $disk_perf_values[0];
+                my $base_for_disk_busy = $disk_perf_values[1];
+    
+                if ($max_percent{$aggr}){
+                    my $ref = $max_percent{$aggr};
+                    my @busy_value = @{ $ref };
+    
+                    if ($disk_busy > $busy_value[0]){
+                        $max_percent{$aggr} = [ $disk_busy, $base_for_disk_busy ];
+                    }
+                } else {
                     $max_percent{$aggr} = [ $disk_busy, $base_for_disk_busy ];
                 }
-            } else {
-                $max_percent{$aggr} = [ $disk_busy, $base_for_disk_busy ];
             }
         }
+        return \%max_percent;
+    } else {
+        return undef;
     }
-    return \%max_percent;
 }
 
 sub disk_module {

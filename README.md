@@ -28,6 +28,9 @@ You need the NetApp Manageability SDK in "/usr/lib/netapp-manageability-sdk-5.1/
 
     * Disk (in work)
       Disk Busy per Aggregate
+
+    * Flash Pool Hit-Ratio
+      Hit-Ratio (read/write) for Hybrid Aggregates
 --
 
 <b>Configuration:</b>
@@ -35,6 +38,14 @@ You need the NetApp Manageability SDK in "/usr/lib/netapp-manageability-sdk-5.1/
     * Config File (/etc/collectd/sample-collectd.conf)
 
     * Credentials File (/etc/collectd/netapp.ini)
+
+--
+
+<b>Custom Types:</b>
+
+Disk Busy, Flash Pool Hit-Ratio and Volume Latency are using custom RRDtool-Types.
+
+For more information see the custom_types.db
 
 --
 LICENSE AND COPYRIGHT

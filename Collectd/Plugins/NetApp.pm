@@ -18,7 +18,7 @@ use Collectd::Plugins::NetApp::Volume qw(volume_module);
 use Collectd::Plugins::NetApp::Aggr qw(aggr_module);
 use Collectd::Plugins::NetApp::NIC qw(nic_module);
 use Collectd::Plugins::NetApp::Disk qw(disk_module);
-use Collectd::Plugins::NetApp:Flash qw(flash_module);
+use Collectd::Plugins::NetApp::Flash qw(flash_module);
 
 use feature qw/switch/;
 

@@ -163,6 +163,68 @@ sub cdot_vol_perf {
     return \%perf_return;
 }
 
+sub cdot_qos_policy {
+
+    my $hostname = shift;
+    my %qos_return;
+
+    my $api = new NaElement('qos-workload-get-iter');
+    $api->child_add_string('max-records','10000');
+    my $output = connect_filer($hostname)->invoke_elem($api);
+
+    my %policy_volume = ();
+    my $workloads = $output->child_get("attributes-list");
+    my @result = $workloads->children_get();
+
+    foreach my $workload (@result){
+
+        my $policy = $workload->child_get_string("policy-group");
+        if($policy =~ m/^qos_/){
+            my $workload_uuid = $workload->child_get_string("workload-uuid");
+            push @{ $policy_volume{$policy} }, $workload_uuid;
+        }
+    }
+
+    for my $workload_name ( keys %policy_volume ){
+
+        foreach my $workload_uuid (@{ $policy_volume{$workload_name} }){
+
+            my $api = new NaElement('perf-object-get-instances');
+            my $xi = new NaElement('counters');
+            $api->child_add($xi);
+            $xi->child_add_string('counter','write_ops');
+            $xi->child_add_string('counter','read_ops');
+
+            my $xi1 = new NaElement('instance-uuids');
+            $api->child_add($xi1);
+
+            $xi1->child_add_string('instance-uuid',$workload_uuid);
+            $api->child_add_string('objectname','workload');
+
+            my $xo = connect_filer($hostname)->invoke_elem($api);
+
+            my $foo = $xo->child_get("instances");
+            my $bar = $foo->child_get("instance-data");
+            my $counters = $bar->child_get("counters");
+            my @counters = $counters->children_get();
+
+            my %values = (read_ops => undef, write_ops => undef);
+
+            foreach my $counter (@counters) {
+                my $key = $counter->child_get_string("name");
+                if (exists $values{$key}) {
+                    $values{$key} = $counter->child_get_string("value");
+                }
+            }
+
+            $workload_name =~ s/^qos_//;
+            $qos_return{$workload_name} = [ $values{read_ops}, $values{write_ops} ];
+
+        }
+    }
+    return \%qos_return;
+}
+
 sub cdot_vol_df {
 
     my $hostname = shift;
@@ -342,14 +404,14 @@ sub volume_module {
                             host => $hostname,
                             });
 
-                    plugin_dispatch_values({
-                            plugin => 'traffic_vol',
-                            plugin_instance => $perf_vol,
-                            type => 'disk_octets',
-                            values => [$perf_vol_value[5], $perf_vol_value[6]],
-                            interval => '30',
-                            host => $hostname,
-                            });
+#                    plugin_dispatch_values({
+#                            plugin => 'traffic_vol',
+#                            plugin_instance => $perf_vol,
+#                            type => 'disk_octets',
+#                            values => [$perf_vol_value[5], $perf_vol_value[6]],
+#                            interval => '30',
+#                            host => $hostname,
+#                            });
 
                     plugin_dispatch_values({
                             plugin => 'iops_vol',
@@ -361,6 +423,27 @@ sub volume_module {
                             });
                 }
             }
+
+            my $qos_result = cdot_qos_policy($hostname);
+
+            if($qos_result){
+
+                foreach my $qos (keys %$qos_result){
+
+                    my $qos_value_ref = $qos_result->{$qos};
+                    my @qos_value = @{ $qos_value_ref };
+
+                    plugin_dispatch_values({
+                            plugin => 'iops_policy',
+                            plugin_instance => $qos,
+                            type => 'disk_ops',
+                            values => [$qos_value[0], $qos_value[1]],
+                            interval => '30',
+                            host => $hostname,
+                            });
+                }
+            }
+
         }
 
         default {

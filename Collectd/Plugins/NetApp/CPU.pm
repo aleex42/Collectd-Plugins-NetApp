@@ -62,13 +62,16 @@ sub cdot_cpu {
                 my $xo = connect_filer($hostname)->invoke_elem($api);
 
                 my $instances = $xo->child_get("instances");
-                my $instance_data = $instances->child_get("instance-data");
-                my $counters = $instance_data->child_get("counters");
-                my $counter_data = $counters->child_get("counter-data");
 
-                my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
+                if($instances){
+                    my $instance_data = $instances->child_get("instance-data");
+                    my $counters = $instance_data->child_get("counters");
+                    my $counter_data = $counters->child_get("counter-data");
 
-                $cpu_return{$node_name} = $rounded_busy;
+                    my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
+
+                    $cpu_return{$node_name} = $rounded_busy;
+                }
             }
         }
 

@@ -18,6 +18,7 @@ use Collectd::Plugins::NetApp::Volume qw(volume_module);
 use Collectd::Plugins::NetApp::Aggr qw(aggr_module);
 use Collectd::Plugins::NetApp::NIC qw(nic_module);
 use Collectd::Plugins::NetApp::Disk qw(disk_module);
+use Collectd::Plugins::NetApp:Flash qw(flash_module);
 
 use feature qw/switch/;
 
@@ -81,6 +82,10 @@ sub my_get {
                     
                     when("Disk"){
                         disk_module($hostname, $filer_os);
+                    }
+
+                    when("Flash"){
+                        flash_module($hostname, $filer_os);
                     }
 
                     default {

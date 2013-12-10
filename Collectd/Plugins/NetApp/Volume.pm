@@ -68,26 +68,8 @@ sub smode_vol_perf {
                 $values{$key} = $counter->child_get_string("value"); 
             }
         }
-
-        my ($read_latency, $write_latency);
-
-        if($values{read_ops} > 0){
-            $read_latency = $values{read_latency}/$values{read_ops}/1000;
-        } else {
-            $read_latency = 0;
-        }
-
-        if($values{write_ops} > 0){
-            $write_latency = $values{write_latency}/$values{write_ops}/1000;
-        } else {
-            $write_latency = 0;
-        }
-
-#        $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $read_latency, $write_latency, $values{read_data}, $values{write_data} ];
-        $perf_return{$vol_name} = [ $read_latency, $write_latency, $values{read_data}, $values{write_data}, $values{read_ops}, $values{write_ops} ];
-
+        $perf_return{$vol_name} = [ $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}, $values{read_ops}, $values{write_ops} ];
     }
-
     return \%perf_return;
 }
 
@@ -143,21 +125,7 @@ sub cdot_vol_perf {
             }
         }
 
-        my ($read_latency, $write_latency);
-    
-        if($values{read_ops} > 0){
-            $read_latency = $values{read_latency}/$values{read_ops}/1000;
-        } else {
-            $read_latency = 0;
-        }
-
-        if($values{write_ops} > 0){
-            $write_latency = $values{write_latency}/$values{write_ops}/1000;
-        } else {
-            $write_latency = 0;
-        }
-        
-        $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $read_latency, $write_latency, $values{read_data}, $values{write_data} ];
+        $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data} ];
 
     }
     return \%perf_return;
@@ -179,48 +147,64 @@ sub cdot_qos_policy {
     foreach my $workload (@result){
 
         my $policy = $workload->child_get_string("policy-group");
+
         if($policy =~ m/^qos_/){
             my $workload_uuid = $workload->child_get_string("workload-uuid");
             push @{ $policy_volume{$policy} }, $workload_uuid;
         }
     }
 
+    my $instance_api = new NaElement('perf-object-get-instances');
+    my $xi = new NaElement('counters');
+    $instance_api->child_add($xi);
+    $xi->child_add_string('counter','write_ops');
+    $xi->child_add_string('counter','read_ops');
+    my $xi1 = new NaElement('instance-uuids');
+    $instance_api->child_add($xi1);
+
+    for my $workload_name ( keys %policy_volume ){
+        foreach my $workload_uuid (@{ $policy_volume{$workload_name} }){
+            $xi1->child_add_string('instance-uuid',$workload_uuid);
+        }
+    }
+
+    $instance_api->child_add_string('objectname','workload');
+
+    my $xo = connect_filer($hostname)->invoke_elem($instance_api);
+
+    my $instances = $xo->child_get("instances");
+    my @instance_result = $instances->children_get();
+
+    my %vol_values;
+
+    foreach my $instance (@instance_result){
+
+        my $volume_id = $instance->child_get_string("uuid");
+        my $counters = $instance->child_get("counters");
+        my @counters = $counters->children_get();
+
+        my %values = (read_ops => undef, write_ops => undef);
+
+        foreach my $counter (@counters) {
+            my $key = $counter->child_get_string("name");
+            if (exists $values{$key}) {
+                $values{$key} = $counter->child_get_string("value");
+            }
+        }
+        $vol_values{$volume_id} = [ $values{read_ops}, $values{write_ops} ];
+    }
+
     for my $workload_name ( keys %policy_volume ){
 
+        my ($read_ops, $write_ops);
+
         foreach my $workload_uuid (@{ $policy_volume{$workload_name} }){
-
-            my $api = new NaElement('perf-object-get-instances');
-            my $xi = new NaElement('counters');
-            $api->child_add($xi);
-            $xi->child_add_string('counter','write_ops');
-            $xi->child_add_string('counter','read_ops');
-
-            my $xi1 = new NaElement('instance-uuids');
-            $api->child_add($xi1);
-
-            $xi1->child_add_string('instance-uuid',$workload_uuid);
-            $api->child_add_string('objectname','workload');
-
-            my $xo = connect_filer($hostname)->invoke_elem($api);
-
-            my $foo = $xo->child_get("instances");
-            my $bar = $foo->child_get("instance-data");
-            my $counters = $bar->child_get("counters");
-            my @counters = $counters->children_get();
-
-            my %values = (read_ops => undef, write_ops => undef);
-
-            foreach my $counter (@counters) {
-                my $key = $counter->child_get_string("name");
-                if (exists $values{$key}) {
-                    $values{$key} = $counter->child_get_string("value");
-                }
-            }
-
-            $workload_name =~ s/^qos_//;
-            $qos_return{$workload_name} = [ $values{read_ops}, $values{write_ops} ];
-
+            $read_ops += $vol_values{$workload_uuid}->[0];
+            $write_ops += $vol_values{$workload_uuid}->[1];
         }
+
+        $workload_name =~ s/qos_//;
+        $qos_return{$workload_name} = [ $read_ops, $write_ops ];
     }
     return \%qos_return;
 }
@@ -394,24 +378,24 @@ sub volume_module {
 
                     my $perf_vol_value_ref = $perf_result->{$perf_vol};
                     my @perf_vol_value = @{ $perf_vol_value_ref };
-                    
+
                     plugin_dispatch_values({
-                           plugin => 'newer_latency_vol',
+                           plugin => 'latency_vol',
                             plugin_instance => $perf_vol,
                             type => 'netapp_vol_latency',
-                            values => [$perf_vol_value[3], $perf_vol_value[4], $perf_vol_value[0], $perf_vol_value[1]],
+                            values => [$perf_vol_value[2], $perf_vol_value[3], $perf_vol_value[0], $perf_vol_value[1]],
                             interval => '30',
                             host => $hostname,
                             });
 
-#                    plugin_dispatch_values({
-#                            plugin => 'traffic_vol',
-#                            plugin_instance => $perf_vol,
-#                            type => 'disk_octets',
-#                            values => [$perf_vol_value[5], $perf_vol_value[6]],
-#                            interval => '30',
-#                            host => $hostname,
-#                            });
+                    plugin_dispatch_values({
+                            plugin => 'traffic_vol',
+                            plugin_instance => $perf_vol,
+                            type => 'disk_octets',
+                            values => [$perf_vol_value[4], $perf_vol_value[5]],
+                            interval => '30',
+                            host => $hostname,
+                            });
 
                     plugin_dispatch_values({
                             plugin => 'iops_vol',
@@ -435,9 +419,9 @@ sub volume_module {
 
                     plugin_dispatch_values({
                             plugin => 'iops_policy',
-                            plugin_instance => $qos,
                             type => 'disk_ops',
-                            values => [$qos_value[0], $qos_value[1]],
+                            type_instance => $qos,
+                            values => [$qos_value[0], $qos_value[1] ],
                             interval => '30',
                             host => $hostname,
                             });
@@ -460,8 +444,8 @@ sub volume_module {
                     plugin_dispatch_values({
                             plugin => 'latency_vol',
                             plugin_instance => $perf_vol,
-                            type => 'disk_latency',
-                            values => [$perf_vol_value[0], $perf_vol_value[1]],
+                            type => 'netapp_vol_latency',
+                            values => [$perf_vol_value[0], $perf_vol_value[1], $perf_vol_value[4], $perf_vol_value[5]],
                             interval => '30',
                             host => $hostname,
                             });

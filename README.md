@@ -17,10 +17,10 @@ You need the NetApp Manageability SDK in "/usr/lib/netapp-manageability-sdk-5.1/
     * CPU
       CPU Busy (unit is "percent", even if "jiffies" is shown)
       
-    * Aggr (in work)
+    * Aggr
       Aggregate Space Usage and IOPs
 
-    * Volume (in work)
+    * Volume
       Volume Space Usage, IOPs, Latency and Traffic
 
     * NIC

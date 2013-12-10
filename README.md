@@ -10,6 +10,15 @@ Support for both <b>NetApp 7-Mode</b> and <b>NetApp Clustered Data ONTAP</b>.
 
 You need the NetApp Manageability SDK in "/usr/lib/netapp-manageability-sdk-5.1/lib/perl/NetApp".
 
+--
+
+<b>Detailed Documentation / Examples</b>
+
+For detailed documentation and examples have a look at my Mediawiki:
+
+* http://wiki.krogloth.de/wiki/NetApp_C-Mode/Capacity_Management
+* http://wiki.krogloth.de/wiki/NetApp_7-Mode/Capacity_Management
+
 -- 
 
 <b>Currently supported modules:</b>

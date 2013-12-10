@@ -25,7 +25,6 @@ use lib "/usr/lib/netapp-manageability-sdk-5.1/lib/perl/NetApp";
 use NaServer;
 use NaElement;
 
-use Data::Dumper;
 use Config::Simple;
 
 sub smode_vol_perf {
@@ -421,7 +420,7 @@ sub volume_module {
                             plugin => 'iops_policy',
                             type => 'disk_ops',
                             type_instance => $qos,
-                            values => [$qos_value[0], $qos_value[1] ],
+                            values => [$qos_value[0], $qos_value[1]],
                             interval => '30',
                             host => $hostname,
                             });

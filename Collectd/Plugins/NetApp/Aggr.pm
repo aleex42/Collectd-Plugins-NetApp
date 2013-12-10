@@ -25,7 +25,6 @@ use lib "/usr/lib/netapp-manageability-sdk-5.1/lib/perl/NetApp";
 use NaServer;
 use NaElement;
 
-use Data::Dumper;
 use Config::Simple;
 
 sub cdot_df {

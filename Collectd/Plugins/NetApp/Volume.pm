@@ -172,7 +172,7 @@ sub cdot_qos_policy {
     my $xo = connect_filer($hostname)->invoke_elem($instance_api);
 
     my $instances = $xo->child_get("instances");
-    my @instance_result = $instances->children_get();
+    my @instance_result = $instances->children_get() if $instances;
 
     my %vol_values;
 

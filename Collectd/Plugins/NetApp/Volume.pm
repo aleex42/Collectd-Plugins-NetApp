@@ -77,10 +77,29 @@ sub cdot_vol_perf {
     my $hostname = shift;
     my %perf_return;
 
-    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "volume");
-
-    my $volumes = $output->child_get("attributes-list");
-    my @result = $volumes->children_get();
+    my $vol_api = new NaElement('volume-get-iter');
+    my $vol_xi = new NaElement('desired-attributes');
+    $vol_api->child_add($vol_xi);
+    my $vol_xi1 = new NaElement('volume-attributes');
+    $vol_xi->child_add($vol_xi1);
+    my $vol_xi4 = new NaElement('volume-id-attributes');
+    $vol_xi4->child_add_string('instance-uuid','instance-uuid');
+    $vol_xi1->child_add($vol_xi4);
+    $vol_api->child_add_string('max-records','1000');
+    my $vol_output = connect_filer($hostname)->invoke_elem($vol_api);
+    
+    my $vol_instances_list = $vol_output->child_get("attributes-list");
+    my @vol_instances = $vol_instances_list->children_get();
+    
+    my %vol_uuids;
+    
+    foreach my $vol (@vol_instances){
+        my $vol_id_attributes = $vol->child_get("volume-id-attributes");
+        my $vol_uuid = $vol_id_attributes->child_get_string("instance-uuid");
+        my $vol_name = $vol_id_attributes->child_get_string("name");
+    
+        $vol_uuids{$vol_uuid} = $vol_name;
+    }
 
     my $api = new NaElement('perf-object-get-instances');
     my $xi = new NaElement('counters');
@@ -96,11 +115,10 @@ sub cdot_vol_perf {
     my $xi1 = new NaElement('instance-uuids');
     $api->child_add($xi1);
 
-    foreach (@result){
-        my $id = $_->child_get_string("uuid");         
-        $xi1->child_add_string('instance-uuid',$id);
+    foreach my $vol_uuid (keys %vol_uuids){
+        $xi1->child_add_string("instance-uuid", $vol_uuid);
     }
-
+    
     $api->child_add_string('objectname','volume');
     
     my $xo = connect_filer($hostname)->invoke_elem($api);
@@ -108,8 +126,10 @@ sub cdot_vol_perf {
     my @instances = $instances_list->children_get();
 
     foreach my $volume (@instances){
+
+        my $vol_uuid = $volume->child_get_string("uuid");
+        my $vol_name = $vol_uuids{$vol_uuid};
         
-        my $vol_name = $volume->child_get_string("name");
         my $counters_list = $volume->child_get("counters");
         my @counters =  $counters_list->children_get();
 

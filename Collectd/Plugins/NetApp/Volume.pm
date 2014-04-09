@@ -46,30 +46,34 @@ sub smode_vol_perf {
     my $out = connect_filer($hostname)->invoke_elem($in);
 
     my $instances_list = $out->child_get("instances");
-    my @instances = $instances_list->children_get();
 
-    foreach my $volume (@instances){
+    if($instances_list){
 
-        my $vol_name = $volume->child_get_string("name");
+        my @instances = $instances_list->children_get();
 
-        my $counters_list = $volume->child_get("counters");
-        my @counters =  $counters_list->children_get();
+        foreach my $volume (@instances){
 
-        my $foo = $counters_list->child_get("counter-data");
+            my $vol_name = $volume->child_get_string("name");
 
-        my %values = (read_ops => undef, write_ops => undef, write_data => undef, read_data => undef, write_latency => undef, read_latency => undef);
+            my $counters_list = $volume->child_get("counters");
+            my @counters =  $counters_list->children_get();
 
-        foreach my $counter (@counters) {
+            my $foo = $counters_list->child_get("counter-data");
 
-            my $key = $counter->child_get_string("name");
+            my %values = (read_ops => undef, write_ops => undef, write_data => undef, read_data => undef, write_latency => undef, read_latency => undef);
 
-            if (exists $values{$key}) { 
-                $values{$key} = $counter->child_get_string("value"); 
+            foreach my $counter (@counters) {
+
+                my $key = $counter->child_get_string("name");
+
+                if (exists $values{$key}) { 
+                    $values{$key} = $counter->child_get_string("value"); 
+                }
             }
+            $perf_return{$vol_name} = [ $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}, $values{read_ops}, $values{write_ops} ];
         }
-        $perf_return{$vol_name} = [ $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}, $values{read_ops}, $values{write_ops} ];
-    }
-    return \%perf_return;
+        return \%perf_return;
+    }    
 }
 
 sub cdot_vol_perf {

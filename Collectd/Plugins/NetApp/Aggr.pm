@@ -54,23 +54,26 @@ sub smode_aggr_df {
             my $aggr_name = $aggr->child_get_string("name");
 
             my $counters_list = $aggr->child_get("counters");
-            my @counters =  $counters_list->children_get();
+            if($counters_list){
 
-            my %values = (wv_fsinfo_blks_total => undef, wv_fsinfo_blks_used => undef, wv_fsinfo_blks_reserve => undef, wv_fsinfo_blks_snap_reserve_pct => undef, user_reads => undef, user_writes => undef );
+                my @counters =  $counters_list->children_get();
 
-            foreach my $counter (@counters){
+                my %values = (wv_fsinfo_blks_total => undef, wv_fsinfo_blks_used => undef, wv_fsinfo_blks_reserve => undef, wv_fsinfo_blks_snap_reserve_pct => undef, user_reads => undef, user_writes => undef );
 
-                my $key = $counter->child_get_string("name");
-                if(exists $values{$key}){
-                    $values{$key} = $counter->child_get_string("value");
+                foreach my $counter (@counters){
+
+                    my $key = $counter->child_get_string("name");
+                    if(exists $values{$key}){
+                        $values{$key} = $counter->child_get_string("value");
+                    }
                 }
+
+                my $used_space = $values{wv_fsinfo_blks_used} * 4096;
+                my $usable_space = ($values{wv_fsinfo_blks_total} - $values{wv_fsinfo_blks_reserve} - $values{wv_fsinfo_blks_snap_reserve_pct} * $values{wv_fsinfo_blks_total} / 100)*4096;
+                my $free_space = $usable_space - $used_space;
+
+                $df_return{$aggr_name} = [ $used_space, $free_space, $values{user_reads}, $values{user_writes} ];
             }
-
-            my $used_space = $values{wv_fsinfo_blks_used} * 4096;
-            my $usable_space = ($values{wv_fsinfo_blks_total} - $values{wv_fsinfo_blks_reserve} - $values{wv_fsinfo_blks_snap_reserve_pct} * $values{wv_fsinfo_blks_total} / 100)*4096;
-            my $free_space = $usable_space - $used_space;
-
-            $df_return{$aggr_name} = [ $used_space, $free_space, $values{user_reads}, $values{user_writes} ];
         }
 
         return \%df_return;
@@ -128,23 +131,26 @@ sub cdot_aggr_df {
             my $aggr_name = $aggr->child_get_string("name");
 
             my $counters_list = $aggr->child_get("counters");
-            my @counters =  $counters_list->children_get();
+            if($counters_list){
 
-            my %values = (wv_fsinfo_blks_total => undef, wv_fsinfo_blks_used => undef, wv_fsinfo_blks_reserve => undef, wv_fsinfo_blks_snap_reserve_pct => undef, user_reads => undef, user_writes => undef );
+                my @counters =  $counters_list->children_get();
 
-            foreach my $counter (@counters){
+                my %values = (wv_fsinfo_blks_total => undef, wv_fsinfo_blks_used => undef, wv_fsinfo_blks_reserve => undef, wv_fsinfo_blks_snap_reserve_pct => undef, user_reads => undef, user_writes => undef );
 
-                my $key = $counter->child_get_string("name");
-                if(exists $values{$key}){
-                    $values{$key} = $counter->child_get_string("value");
+                foreach my $counter (@counters){
+
+                    my $key = $counter->child_get_string("name");
+                    if(exists $values{$key}){
+                        $values{$key} = $counter->child_get_string("value");
+                    }
                 }
+
+                my $used_space = $values{wv_fsinfo_blks_used} * 4096;
+                my $usable_space = ($values{wv_fsinfo_blks_total} - $values{wv_fsinfo_blks_reserve} - $values{wv_fsinfo_blks_snap_reserve_pct} * $values{wv_fsinfo_blks_total} / 100)*4096;
+                my $free_space = $usable_space - $used_space;
+
+                $df_return{$aggr_name} = [ $used_space, $free_space, $values{user_reads}, $values{user_writes} ];      
             }
-
-            my $used_space = $values{wv_fsinfo_blks_used} * 4096;
-            my $usable_space = ($values{wv_fsinfo_blks_total} - $values{wv_fsinfo_blks_reserve} - $values{wv_fsinfo_blks_snap_reserve_pct} * $values{wv_fsinfo_blks_total} / 100)*4096;
-            my $free_space = $usable_space - $used_space;
-
-            $df_return{$aggr_name} = [ $used_space, $free_space, $values{user_reads}, $values{user_writes} ];      
         }
         return \%df_return;
     } else {

@@ -88,21 +88,23 @@ sub cdot_flash {
         foreach my $instance (@instance_result){
 
             my $counters = $instance->child_get("counters");
-            my @result = $counters->children_get();
+            if($counters){
+                my @result = $counters->children_get();
 
-            my %values = (user_read_blocks => undef, user_read_blocks_ssd => undef, user_write_blocks => undef, user_write_blocks_ssd => undef);
+                my %values = (user_read_blocks => undef, user_read_blocks_ssd => undef, user_write_blocks => undef, user_write_blocks_ssd => undef);
 
-            foreach my $counter (@result){
-                my $key = $counter->child_get_string("name");
-                if(exists $values{$key}){
-                    $values{$key} = $counter->child_get_string("value");
+                foreach my $counter (@result){
+                    my $key = $counter->child_get_string("name");
+                    if(exists $values{$key}){
+                        $values{$key} = $counter->child_get_string("value");
+                    }
                 }
+
+                my $uuid = $instance->child_get_string("uuid");
+                my $name = $instance->child_get_string("name");
+
+                $aggr_transfers{$uuid} = [ $values{user_read_blocks}, $values{user_read_blocks_ssd}, $values{user_write_blocks}, $values{user_write_blocks_ssd} ];
             }
-
-            my $uuid = $instance->child_get_string("uuid");
-            my $name = $instance->child_get_string("name");
-
-            $aggr_transfers{$uuid} = [ $values{user_read_blocks}, $values{user_read_blocks_ssd}, $values{user_write_blocks}, $values{user_write_blocks_ssd} ];
         }
     }
 

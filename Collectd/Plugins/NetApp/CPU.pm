@@ -65,11 +65,13 @@ sub cdot_cpu {
                 if($instances){
                     my $instance_data = $instances->child_get("instance-data");
                     my $counters = $instance_data->child_get("counters");
-                    my $counter_data = $counters->child_get("counter-data");
-
-                    my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
-
-                    $cpu_return{$node_name} = $rounded_busy;
+                    if($counters){
+                        my $counter_data = $counters->child_get("counter-data");
+                        if($counter_data){
+                            my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
+                            $cpu_return{$node_name} = $rounded_busy;
+                        }
+                    }
                 }
             }
         }
@@ -97,12 +99,17 @@ sub smode_cpu {
     if($instances){
         my $instance_data = $instances->child_get("instance-data");
         my $counters = $instance_data->child_get("counters");
-        my $counter_data = $counters->child_get("counter-data");
-
-        my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
-    
-        return $rounded_busy;
-
+        if($counters){
+            my $counter_data = $counters->child_get("counter-data");
+            if($counter_data){
+                my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
+                return $rounded_busy;
+            } else {
+                return undef;
+            }
+        } else {
+            return undef;
+        }
     } else {
         return undef;
     }

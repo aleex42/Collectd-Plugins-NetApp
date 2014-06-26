@@ -56,21 +56,23 @@ sub smode_vol_perf {
             my $vol_name = $volume->child_get_string("name");
 
             my $counters_list = $volume->child_get("counters");
-            my @counters =  $counters_list->children_get();
+            if($counters_list){
+                my @counters =  $counters_list->children_get();
 
-            my $foo = $counters_list->child_get("counter-data");
+                my $foo = $counters_list->child_get("counter-data");
 
-            my %values = (read_ops => undef, write_ops => undef, write_data => undef, read_data => undef, write_latency => undef, read_latency => undef);
+                my %values = (read_ops => undef, write_ops => undef, write_data => undef, read_data => undef, write_latency => undef, read_latency => undef);
 
-            foreach my $counter (@counters) {
+                foreach my $counter (@counters) {
 
-                my $key = $counter->child_get_string("name");
+                    my $key = $counter->child_get_string("name");
 
-                if (exists $values{$key}) { 
-                    $values{$key} = $counter->child_get_string("value"); 
+                    if (exists $values{$key}) { 
+                        $values{$key} = $counter->child_get_string("value"); 
+                    }
                 }
+                $perf_return{$vol_name} = [ $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}, $values{read_ops}, $values{write_ops} ];
             }
-            $perf_return{$vol_name} = [ $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}, $values{read_ops}, $values{write_ops} ];
         }
         return \%perf_return;
     }    
@@ -127,29 +129,33 @@ sub cdot_vol_perf {
     
     my $xo = connect_filer($hostname)->invoke_elem($api);
     my $instances_list = $xo->child_get("instances");
-    my @instances = $instances_list->children_get();
+    if($instaces_list){
 
-    foreach my $volume (@instances){
+        my @instances = $instances_list->children_get();
 
-        my $vol_uuid = $volume->child_get_string("uuid");
-        my $vol_name = $vol_uuids{$vol_uuid};
-        
-        my $counters_list = $volume->child_get("counters");
-        my @counters =  $counters_list->children_get();
+        foreach my $volume (@instances){
 
-        my %values = (read_ops => undef, write_ops => undef, write_data => undef, read_data => undef, read_latency => undef, write_latency => undef);
+            my $vol_uuid = $volume->child_get_string("uuid");
+            my $vol_name = $vol_uuids{$vol_uuid};
 
-        foreach my $counter (@counters) {
-    
-            my $key = $counter->child_get_string("name");
+            my $counters_list = $volume->child_get("counters");
+            if($counters_list){
+                my @counters =  $counters_list->children_get();
 
-            if (exists $values{$key}) {
-                $values{$key} = $counter->child_get_string("value");
+                my %values = (read_ops => undef, write_ops => undef, write_data => undef, read_data => undef, read_latency => undef, write_latency => undef);
+
+                foreach my $counter (@counters) {
+
+                    my $key = $counter->child_get_string("name");
+
+                    if (exists $values{$key}) {
+                        $values{$key} = $counter->child_get_string("value");
+                    }
+                }
+
+                $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data} ];
             }
         }
-
-        $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data} ];
-
     }
     return \%perf_return;
 }
@@ -196,38 +202,43 @@ sub cdot_qos_policy {
     my $xo = connect_filer($hostname)->invoke_elem($instance_api);
 
     my $instances = $xo->child_get("instances");
-    my @instance_result = $instances->children_get() if $instances;
+    if($instances){
 
-    my %vol_values;
+        my @instance_result = $instances->children_get();
 
-    foreach my $instance (@instance_result){
+        my %vol_values;
 
-        my $volume_id = $instance->child_get_string("uuid");
-        my $counters = $instance->child_get("counters");
-        my @counters = $counters->children_get();
+        foreach my $instance (@instance_result){
 
-        my %values = (read_ops => undef, write_ops => undef);
+            my $volume_id = $instance->child_get_string("uuid");
+            my $counters = $instance->child_get("counters");
+            if($counters){
+                my @counters = $counters->children_get();
 
-        foreach my $counter (@counters) {
-            my $key = $counter->child_get_string("name");
-            if (exists $values{$key}) {
-                $values{$key} = $counter->child_get_string("value");
+                my %values = (read_ops => undef, write_ops => undef);
+
+                foreach my $counter (@counters) {
+                    my $key = $counter->child_get_string("name");
+                    if (exists $values{$key}) {
+                        $values{$key} = $counter->child_get_string("value");
+                    }
+                }
+                $vol_values{$volume_id} = [ $values{read_ops}, $values{write_ops} ];
             }
         }
-        $vol_values{$volume_id} = [ $values{read_ops}, $values{write_ops} ];
-    }
 
-    for my $workload_name ( keys %policy_volume ){
+        for my $workload_name ( keys %policy_volume ){
 
-        my ($read_ops, $write_ops);
+            my ($read_ops, $write_ops);
 
-        foreach my $workload_uuid (@{ $policy_volume{$workload_name} }){
-            $read_ops += $vol_values{$workload_uuid}->[0];
-            $write_ops += $vol_values{$workload_uuid}->[1];
+            foreach my $workload_uuid (@{ $policy_volume{$workload_name} }){
+                $read_ops += $vol_values{$workload_uuid}->[0];
+                $write_ops += $vol_values{$workload_uuid}->[1];
+            }
+
+            $workload_name =~ s/qos_//;
+            $qos_return{$workload_name} = [ $read_ops, $write_ops ];
         }
-
-        $workload_name =~ s/qos_//;
-        $qos_return{$workload_name} = [ $read_ops, $write_ops ];
     }
     return \%qos_return;
 }

@@ -69,27 +69,33 @@ sub cdot_nic {
         my $xo = connect_filer($hostname)->invoke_elem($api);
     
         my $instances = $xo->child_get("instances");
-        my @instance_data = $instances->children_get("instance-data");
-    
-        foreach my $nic (@instance_data){
-    
-            my $uuid = $nic->child_get_string("uuid");
-            my @nic_id = split(/:/,$uuid);
-            my $nic_name = $nic_id[0] . "-" . $nic_id[2];
-    
-            my $counters = $nic->child_get("counters");
-            my @counter_result = $counters->children_get();
-    
-            my %values = (send_data => undef, recv_data => undef);
-    
-            foreach my $counter (@counter_result){
-    
-                my $key = $counter->child_get_string("name");
-                if(exists $values{$key}){
-                    $values{$key} = $counter->child_get_string("value");
+        if($instances){
+
+            my @instance_data = $instances->children_get("instance-data");
+
+            foreach my $nic (@instance_data){
+
+                my $uuid = $nic->child_get_string("uuid");
+                my @nic_id = split(/:/,$uuid);
+                my $nic_name = $nic_id[0] . "-" . $nic_id[2];
+
+                my $counters = $nic->hild_get("counters");
+                if($counters){
+
+                    my @counter_result = $counters->children_get();
+
+                    my %values = (send_data => undef, recv_data => undef);
+
+                    foreach my $counter (@counter_result){
+
+                        my $key = $counter->child_get_string("name");
+                        if(exists $values{$key}){
+                            $values{$key} = $counter->child_get_string("value");
+                        }
+                    }
+                    $nic_return{$nic_name} = [ $values{recv_data}, $values{send_data} ];
                 }
             }
-            $nic_return{$nic_name} = [ $values{recv_data}, $values{send_data} ];
         }
         return \%nic_return;
     } else {
@@ -122,19 +128,21 @@ sub smode_nic {
             my $int_name = $interface->child_get_string("name");
 
             my $counters_list = $interface->child_get("counters");
-            my @counters = $counters_list->children_get();
+            if($counters_list){
+                my @counters = $counters_list->children_get();
 
-            my %values = (recv_data => undef, send_data => undef);
+                my %values = (recv_data => undef, send_data => undef);
 
-            foreach my $counter (@counters){
+                foreach my $counter (@counters){
 
-                my $key = $counter->child_get_string("name");
-                if(exists $values{$key}){
-                    $values{$key} = $counter->child_get_string("value");
+                    my $key = $counter->child_get_string("name");
+                    if(exists $values{$key}){
+                        $values{$key} = $counter->child_get_string("value");
+                    }
                 }
-            }
 
-            $nic_return{$int_name} = [ $values{recv_data}, $values{send_data} ];
+                $nic_return{$int_name} = [ $values{recv_data}, $values{send_data} ];
+            }
         }
     }
 

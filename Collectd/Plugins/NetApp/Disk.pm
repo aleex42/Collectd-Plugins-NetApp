@@ -57,7 +57,6 @@ sub smode_disk {
             if($counters){
 
                 my @counters =  $counters_list->children_get();
-    
                 my %values = (raid_name => undef, disk_busy => undef, base_for_disk_busy => undef);
     
                 foreach my $counter (@counters){
@@ -151,21 +150,24 @@ sub cdot_disk {
         my %disk_perf = ();
     
         foreach my $instance (@instance_result){
-    
+
             my $counters = $instance->child_get("counters");
-            my @result = $counters->children_get();
-    
-            my %values = (disk_busy => undef, base_for_disk_busy => undef);
-    
-            foreach my $counter (@result){
-                my $key = $counter->child_get_string("name");
-                if(exists $values{$key}){
-                    $values{$key} = $counter->child_get_string("value");
+            if($counters){
+
+                my @result = $counters->children_get();
+
+                my %values = (disk_busy => undef, base_for_disk_busy => undef);
+
+                foreach my $counter (@result){
+                    my $key = $counter->child_get_string("name");
+                    if(exists $values{$key}){
+                        $values{$key} = $counter->child_get_string("value");
+                    }
                 }
+                my $uuid = $instance->child_get_string("uuid");
+                $disk_perf{$uuid} = "$values{disk_busy}, $values{base_for_disk_busy}";
+
             }
-            my $uuid = $instance->child_get_string("uuid");
-            $disk_perf{$uuid} = "$values{disk_busy}, $values{base_for_disk_busy}";
-    
         }
 
         foreach my $aggr (keys %disk_list){

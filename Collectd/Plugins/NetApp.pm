@@ -20,6 +20,8 @@ use Collectd::Plugins::NetApp::NIC qw(nic_module);
 use Collectd::Plugins::NetApp::Disk qw(disk_module);
 use Collectd::Plugins::NetApp::Flash qw(flash_module);
 
+use Parallel::Loops;
+
 use feature qw/switch/;
 
 use Data::Dumper;
@@ -51,7 +53,13 @@ sub my_init {
 
 sub my_get {
 
-    foreach my $hostname (keys %{ $cfg->{_DATA}}){
+    my @hosts = keys %{ $cfg->{_DATA}};
+
+    my $pl = Parallel::Loops->new(10);
+
+    $pl->foreach my $hostname (@hosts, sub {
+
+        my $hostname = @_;
 
         my $filer_os = $Config{ $hostname . '.Mode'};
         my $modules = $Config{ $hostname . '.Modules'};
@@ -94,7 +102,7 @@ sub my_get {
                 }
             }
         }
-    }
+    });
 
 return 1;
 

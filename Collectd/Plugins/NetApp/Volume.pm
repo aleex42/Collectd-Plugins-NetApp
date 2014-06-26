@@ -299,56 +299,61 @@ sub smode_vol_df {
     my $out = connect_filer($hostname)->invoke("volume-list-info");
 
     my $instances_list = $out->child_get("volumes");
-    my @instances = $instances_list->children_get();
+    
+    if($instances_list){
 
-    foreach my $volume (@instances){
+        my @instances = $instances_list->children_get();
 
-        my $vol_name = $volume->child_get_string("name");
+        foreach my $volume (@instances){
 
-        my $snap = NaElement->new("snapshot-list-info");
-        $snap->child_add_string("volume",$vol_name);
-        my $snap_out = connect_filer($hostname)->invoke_elem($snap);
+            my $vol_name = $volume->child_get_string("name");
 
-        my $snap_instances_list = $snap_out->child_get("snapshots");
+            my $snap = NaElement->new("snapshot-list-info");
+            $snap->child_add_string("volume",$vol_name);
+            my $snap_out = connect_filer($hostname)->invoke_elem($snap);
 
-        if($snap_instances_list){
+            my $snap_instances_list = $snap_out->child_get("snapshots");
 
-            my @snap_instances = $snap_instances_list->children_get();
+            if($snap_instances_list){
 
-            my $cumulative = 0;
+                my @snap_instances = $snap_instances_list->children_get();
 
-            foreach my $snap (@snap_instances){
-                if($snap->child_get_int("cumulative-total") > $cumulative){
-                    $cumulative = $snap->child_get_int("cumulative-total");
+                my $cumulative = 0;
+
+                foreach my $snap (@snap_instances){
+                    if($snap->child_get_int("cumulative-total") > $cumulative){
+                        $cumulative = $snap->child_get_int("cumulative-total");
+                    }
                 }
-            }
 
-            my $snap_used = $cumulative*1024;
-            my $vol_free = $volume->child_get_int("size-available");
-            my $vol_used = $volume->child_get_int("size-used");
+                my $snap_used = $cumulative*1024;
+                my $vol_free = $volume->child_get_int("size-available");
+                my $vol_used = $volume->child_get_int("size-used");
 
-            my $snap_reserved = $volume->child_get_int("snapshot-blocks-reserved") * 1024;
-            my $snap_norm_used;
-            my $snap_reserve_free;
-            my $snap_reserve_used;        
+                my $snap_reserved = $volume->child_get_int("snapshot-blocks-reserved") * 1024;
+                my $snap_norm_used;
+                my $snap_reserve_free;
+                my $snap_reserve_used;        
 
-            if($snap_reserved > $snap_used){
-                $snap_reserve_free = $snap_reserved - $snap_used;
-                $snap_reserve_used = $snap_used;
-                $snap_norm_used = 0;
-            } else {
-                $snap_reserve_free = 0;
-                $snap_reserve_used = $snap_reserved;
-                $snap_norm_used = $snap_used - $snap_reserved;
-            }
+                if($snap_reserved > $snap_used){
+                    $snap_reserve_free = $snap_reserved - $snap_used;
+                    $snap_reserve_used = $snap_used;
+                    $snap_norm_used = 0;
+                } else {
+                    $snap_reserve_free = 0;
+                    $snap_reserve_used = $snap_reserved;
+                    $snap_norm_used = $snap_used - $snap_reserved;
+                }
 
-            if ( $vol_used >= $snap_norm_used){
-                $vol_used = $vol_used - $snap_norm_used;
-            } 
+                if ( $vol_used >= $snap_norm_used){
+                    $vol_used = $vol_used - $snap_norm_used;
+                } 
 
-            $df_return{$vol_name} = [ $vol_free, $vol_used, $snap_reserve_free, $snap_reserve_used, $snap_norm_used];
+                $df_return{$vol_name} = [ $vol_free, $vol_used, $snap_reserve_free, $snap_reserve_used, $snap_norm_used];
 
-        }           
+            }           
+        }
+
     }
 
     return \%df_return;

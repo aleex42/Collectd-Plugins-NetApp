@@ -112,26 +112,30 @@ sub smode_nic {
     my $out = connect_filer($hostname)->invoke_elem($in);
 
     my $instances_list = $out->child_get("instances");
-    my @instances = $instances_list->children_get();
+    
+    if($instances_list){
 
-    foreach my $interface (@instances){
+        my @instances = $instances_list->children_get();
 
-        my $int_name = $interface->child_get_string("name");
+        foreach my $interface (@instances){
 
-        my $counters_list = $interface->child_get("counters");
-        my @counters = $counters_list->children_get();
+            my $int_name = $interface->child_get_string("name");
 
-        my %values = (recv_data => undef, send_data => undef);
+            my $counters_list = $interface->child_get("counters");
+            my @counters = $counters_list->children_get();
 
-        foreach my $counter (@counters){
+            my %values = (recv_data => undef, send_data => undef);
 
-            my $key = $counter->child_get_string("name");
-            if(exists $values{$key}){
-                $values{$key} = $counter->child_get_string("value");
+            foreach my $counter (@counters){
+
+                my $key = $counter->child_get_string("name");
+                if(exists $values{$key}){
+                    $values{$key} = $counter->child_get_string("value");
+                }
             }
-        }
 
-        $nic_return{$int_name} = [ $values{recv_data}, $values{send_data} ];
+            $nic_return{$int_name} = [ $values{recv_data}, $values{send_data} ];
+        }
     }
 
     return \%nic_return;

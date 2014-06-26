@@ -129,7 +129,7 @@ sub cdot_vol_perf {
     
     my $xo = connect_filer($hostname)->invoke_elem($api);
     my $instances_list = $xo->child_get("instances");
-    if($instaces_list){
+    if($instances_list){
 
         my @instances = $instances_list->children_get();
 

@@ -55,8 +55,6 @@ sub my_get {
 
     foreach my $hostname (@hosts){
 
-        my $hostname = $_;
-
         my $filer_os = $Config{ $hostname . '.Mode'};
         my $modules = $Config{ $hostname . '.Modules'};
 

@@ -57,9 +57,9 @@ sub my_get {
 
     my $pl = Parallel::Loops->new(10);
 
-    $pl->foreach my $hostname (@hosts, sub {
+    $pl->foreach (\@hosts, sub{
 
-        my $hostname = @_;
+        my $hostname = $_;
 
         my $filer_os = $Config{ $hostname . '.Mode'};
         my $modules = $Config{ $hostname . '.Modules'};

@@ -105,23 +105,27 @@ sub cdot_disk {
     my $disk_output = connect_filer($hostname)->invoke_elem($api);
 
     my $disks = $disk_output->child_get("attributes-list");
-    my @disk_result = $disks->children_get();
+    
+    if($disks){
 
-    my %max_percent = ();
-    my %disk_list = ();
-
-    foreach my $disk (@disk_result){
-
-        my $raid_info = $disk->child_get("disk-raid-info");
-        my $disk_uuid = $raid_info->child_get_int("disk-uid");
-
-        if($raid_info->child_get("disk-aggregate-info")){
-
-            my $aggr_info = $raid_info->child_get("disk-aggregate-info");
-            my $aggr_name = $aggr_info->child_get_int("aggregate-name");
-
-            push (@{$disk_list{$aggr_name}}, $disk_uuid);
-
+        my @disk_result = $disks->children_get();
+    
+        my %max_percent = ();
+        my %disk_list = ();
+    
+        foreach my $disk (@disk_result){
+    
+            my $raid_info = $disk->child_get("disk-raid-info");
+            my $disk_uuid = $raid_info->child_get_int("disk-uid");
+    
+            if($raid_info->child_get("disk-aggregate-info")){
+    
+                my $aggr_info = $raid_info->child_get("disk-aggregate-info");
+                my $aggr_name = $aggr_info->child_get_int("aggregate-name");
+    
+                push (@{$disk_list{$aggr_name}}, $disk_uuid);
+    
+            }
         }
     }
 

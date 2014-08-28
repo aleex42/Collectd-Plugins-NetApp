@@ -105,13 +105,13 @@ sub cdot_disk {
     my $disk_output = connect_filer($hostname)->invoke_elem($api);
 
     my $disks = $disk_output->child_get("attributes-list");
-    
+   
+    my %max_percent = ();
+    my %disk_list = ();
+ 
     if($disks){
 
         my @disk_result = $disks->children_get();
-    
-        my %max_percent = ();
-        my %disk_list = ();
     
         foreach my $disk (@disk_result){
     

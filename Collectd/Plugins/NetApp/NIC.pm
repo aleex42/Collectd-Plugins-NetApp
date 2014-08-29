@@ -33,29 +33,29 @@ sub cdot_nic {
     my %nic_return;
     my @nics;
 
-    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "ifnet");
+    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "lif");
 
     my $nics = $output->child_get("attributes-list");
 
     if($nics){
 
         my @result = $nics->children_get();
-    
+   
         foreach my $interface (@result){
     
             my $if_name = $interface->child_get_string("name");
-    
+
             if(($if_name !~ "e0P\$") && ($if_name !~ "losk\$")){
     
                 my $uuid = $interface->child_get_string("uuid");
                 push(@nics, $uuid);
             }
         }
-    
+
         my $api = new NaElement('perf-object-get-instances');
         my $xi = new NaElement('counters');
         $api->child_add($xi);
-        $xi->child_add_string('counter','send_data');
+        $xi->child_add_string('counter','sent_data');
         $xi->child_add_string('counter','recv_data');
         my $xi1 = new NaElement('instance-uuids');
         $api->child_add($xi1);
@@ -64,7 +64,7 @@ sub cdot_nic {
             $xi1->child_add_string('instance-uuid',$nic_uuid);
         }
     
-        $api->child_add_string('objectname','ifnet');
+        $api->child_add_string('objectname','lif');
     
         my $xo = connect_filer($hostname)->invoke_elem($api);
     
@@ -75,16 +75,14 @@ sub cdot_nic {
 
             foreach my $nic (@instance_data){
 
-                my $uuid = $nic->child_get_string("uuid");
-                my @nic_id = split(/:/,$uuid);
-                my $nic_name = $nic_id[0] . "-" . $nic_id[2];
+                my $nic_name = $nic->child_get_string("name");
 
                 my $counters = $nic->child_get("counters");
                 if($counters){
 
                     my @counter_result = $counters->children_get();
 
-                    my %values = (send_data => undef, recv_data => undef);
+                    my %values = (sent_data => undef, recv_data => undef);
 
                     foreach my $counter (@counter_result){
 
@@ -93,7 +91,7 @@ sub cdot_nic {
                             $values{$key} = $counter->child_get_string("value");
                         }
                     }
-                    $nic_return{$nic_name} = [ $values{recv_data}, $values{send_data} ];
+                    $nic_return{$nic_name} = [ $values{recv_data}, $values{sent_data} ];
                 }
             }
         }

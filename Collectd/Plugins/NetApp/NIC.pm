@@ -166,7 +166,7 @@ sub nic_module {
                     my @nic_value = @{ $nic_value_ref };
 
                     plugin_dispatch_values({
-                            plugin => 'interface',
+                            plugin => 'interface_lif',
                             plugin_instance => $nic,
                             type => 'if_octets',
                             values => [$nic_value[0], $nic_value[1]],

@@ -27,7 +27,7 @@ use NaElement;
 
 use Config::Simple;
 
-sub cdot_nic {
+sub cdot_lif {
 
     my $hostname = shift;
     my %nic_return;
@@ -101,6 +101,77 @@ sub cdot_nic {
     }
 }
 
+sub cdot_port {
+
+    my $hostname = shift;
+    my %port_return;
+    my @nics;
+
+    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "nic_common");
+
+    my $nics = $output->child_get("attributes-list");
+
+    if($nics){
+
+        my @result = $nics->children_get();
+
+        foreach my $interface (@result){
+            my $if_name = $interface->child_get_string("name");
+            my $uuid = $interface->child_get_string("uuid");
+            push(@nics, $uuid);
+        }
+
+        my $api = new NaElement('perf-object-get-instances');
+        my $xi = new NaElement('counters');
+        $api->child_add($xi);
+        $xi->child_add_string('counter','rx_total_bytes');
+        $xi->child_add_string('counter','tx_total_bytes');
+        my $xi1 = new NaElement('instance-uuids');
+        $api->child_add($xi1);
+
+        foreach my $nic_uuid (@nics){
+            $xi1->child_add_string('instance-uuid',$nic_uuid);
+        }
+
+        $api->child_add_string('objectname','nic_common');
+
+        my $xo = connect_filer($hostname)->invoke_elem($api);
+
+        my $instances = $xo->child_get("instances");
+        if($instances){
+
+            my @instance_data = $instances->children_get("instance-data");
+
+            foreach my $nic (@instance_data){
+
+                my $nic_name = $nic->child_get_string("uuid");
+                $nic_name =~ s/kernel://;
+
+                my $counters = $nic->child_get("counters");
+                if($counters){
+
+                    my @counter_result = $counters->children_get();
+
+                    my %values = (tx_total_bytes => undef, rx_total_bytes => undef);
+
+                    foreach my $counter (@counter_result){
+
+                        my $key = $counter->child_get_string("name");
+                        if(exists $values{$key}){
+                            $values{$key} = $counter->child_get_string("value");
+                        }
+                    }
+                    $port_return{$nic_name} = [ $values{rx_total_bytes}, $values{tx_total_bytes} ];
+                }
+            }
+        }
+        return \%port_return;
+    } else {
+        return undef;
+    }
+}
+
+
 sub smode_nic {
 
     my $hostname = shift;
@@ -156,25 +227,46 @@ sub nic_module {
 
         when("cDOT"){
 
-            my $nic_result = cdot_nic($hostname);
+            my $lif_result = cdot_lif($hostname);
 
-            if($nic_result){
+            if($lif_result){
 
-                foreach my $nic (keys %$nic_result){
+                foreach my $lif (keys %$lif_result){
 
-                    my $nic_value_ref = $nic_result->{$nic};
-                    my @nic_value = @{ $nic_value_ref };
+                    my $lif_value_ref = $lif_result->{$lif};
+                    my @lif_value = @{ $lif_value_ref };
 
                     plugin_dispatch_values({
                             plugin => 'interface_lif',
-                            plugin_instance => $nic,
+                            plugin_instance => $lif,
                             type => 'if_octets',
-                            values => [$nic_value[0], $nic_value[1]],
+                            values => [$lif_value[0], $lif_value[1]],
                             interval => '30',
                             host => $hostname,
                             });
                 }
             }
+
+            my $port_result = cdot_port($hostname);
+
+            if($port_result){
+
+                foreach my $port (keys %$port_result){
+
+                    my $port_value_ref = $port_result->{$port};
+                    my @port_value = @{ $port_value_ref };
+
+                    plugin_dispatch_values({
+                            plugin => 'interface_port',
+                            plugin_instance => $port,
+                            type => 'if_octets',
+                            values => [$port_value[0], $port_value[1]],
+                            interval => '30',
+                            host => $hostname,
+                            });
+                }
+            }
+
         }
 
         default {
@@ -205,4 +297,3 @@ sub nic_module {
 }
 
 1;
-

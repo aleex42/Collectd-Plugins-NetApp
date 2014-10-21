@@ -61,12 +61,6 @@ sub cdot_flash {
         $aggr_name_mapping{$aggr_name} = $aggr_uuid;
     }
 
-    open(FILE, ">/tmp/aggrs.txt");
-
-    print FILE Dumper(%aggr_name_mapping);
-
-    close(FILE);
-
     my $perf_api = new NaElement('perf-object-get-instances');
     my $perf_counters = new NaElement('counters');
     $perf_api->child_add($perf_counters);

@@ -13,8 +13,7 @@ package Collectd::Plugins::NetApp;
 use strict;
 use warnings;
 
-use LWP::Simple;
-use Parallel::ForkManager;
+use threads;
 
 use Collectd::Plugins::NetApp::CPU qw(cpu_module);
 use Collectd::Plugins::NetApp::Volume qw(volume_module);
@@ -52,70 +51,68 @@ sub my_init {
     1;
 }
 
+sub thread_func {
+
+    my $hostname = shift;
+    
+    my $filer_os = $Config{ $hostname . '.Mode'};
+    my $modules = $Config{ $hostname . '.Modules'};
+
+    if($modules){
+
+        my @modules_array = @{ $modules };
+
+        foreach my $module (@modules_array){
+
+            given($module){
+
+                when("CPU"){
+                    cpu_module($hostname, $filer_os);
+                }
+
+                when("Aggr"){
+                    aggr_module($hostname, $filer_os);
+                }
+
+                when("Volume"){
+                    volume_module($hostname, $filer_os);
+                }
+
+                when("NIC"){
+                    nic_module($hostname, $filer_os);
+                }
+
+                when("Disk"){
+                    disk_module($hostname, $filer_os);
+                }
+
+                when("Flash"){
+                    flash_module($hostname, $filer_os);
+                }
+
+                default {
+                # nothing
+                }
+            }
+        }
+    }
+}
+
 sub my_get {
 
     my @hosts = keys %{ $cfg->{_DATA}};
 
-    open(FILE, ">>/tmp/hostnames");
+    my @threads = ();
 
-    my $pm = Parallel::ForkManager->new(5);
-
-    foreach my $hostname (@hosts) {
-
-        $pm->start and next; # do the fork
-
-        print FILE $hostname . "\n";
-
-        my $filer_os = $Config{ $hostname . '.Mode'};
-        my $modules = $Config{ $hostname . '.Modules'};
-
-        if($modules){
-
-            my @modules_array = @{ $modules };
-
-            foreach my $module (@modules_array){
-
-                given($module){
-
-                    when("CPU"){
-                        cpu_module($hostname, $filer_os);
-                    }
-
-                    when("Aggr"){
-                        aggr_module($hostname, $filer_os);
-                    }
-
-                    when("Volume"){
-                        volume_module($hostname, $filer_os);
-                    }
-
-                    when("NIC"){
-                        nic_module($hostname, $filer_os);
-                    }
-
-                    when("Disk"){
-                        disk_module($hostname, $filer_os);
-                    }
-
-                    when("Flash"){
-                        flash_module($hostname, $filer_os);
-                    }
-
-                    default {
-                    # nothing
-                    }
-                }
-            }
-        }
-        $pm->finish; # do the exit in the child process
+    foreach my $host (@hosts)  {
+       push (@threads, threads->create (\&thread_func, $host));
     }
 
-#    $pm->wait_all_children;
-
-    close(FILE);
+    foreach (@threads) {
+       $_->join(); # blocks until this thread exits
+    }
 
     return 1;
-
 }
 
 1;

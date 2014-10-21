@@ -13,6 +13,9 @@ package Collectd::Plugins::NetApp;
 use strict;
 use warnings;
 
+use LWP::Simple;
+use Parallel::ForkManager;
+
 use Collectd::Plugins::NetApp::CPU qw(cpu_module);
 use Collectd::Plugins::NetApp::Volume qw(volume_module);
 use Collectd::Plugins::NetApp::Aggr qw(aggr_module);
@@ -53,7 +56,15 @@ sub my_get {
 
     my @hosts = keys %{ $cfg->{_DATA}};
 
-    foreach my $hostname (@hosts){
+    open(FILE, ">>/tmp/hostnames");
+
+    my $pm = Parallel::ForkManager->new(5);
+
+    foreach my $hostname (@hosts) {
+
+        $pm->start and next; # do the fork
+
+        print FILE $hostname . "\n";
 
         my $filer_os = $Config{ $hostname . '.Mode'};
         my $modules = $Config{ $hostname . '.Modules'};
@@ -61,15 +72,15 @@ sub my_get {
         if($modules){
 
             my @modules_array = @{ $modules };
-    
+
             foreach my $module (@modules_array){
 
                 given($module){
-    
+
                     when("CPU"){
                         cpu_module($hostname, $filer_os);
                     }
-    
+
                     when("Aggr"){
                         aggr_module($hostname, $filer_os);
                     }
@@ -81,7 +92,7 @@ sub my_get {
                     when("NIC"){
                         nic_module($hostname, $filer_os);
                     }
-                    
+
                     when("Disk"){
                         disk_module($hostname, $filer_os);
                     }
@@ -91,14 +102,19 @@ sub my_get {
                     }
 
                     default {
-    # nothing
+                    # nothing
                     }
                 }
             }
         }
-   }
+        $pm->finish; # do the exit in the child process
+    }
 
-return 1;
+#    $pm->wait_all_children;
+
+    close(FILE);
+
+    return 1;
 
 }
 

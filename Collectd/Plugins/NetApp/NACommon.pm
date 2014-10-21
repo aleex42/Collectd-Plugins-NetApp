@@ -33,7 +33,7 @@ sub connect_filer {
     my $s = NaServer->new( $hostname, 1, 3 );
     $s->set_transport_type('HTTPS');
     $s->set_style('LOGIN');
-    $s->set_timeout(60);
+    $s->set_timeout(10);
     $s->set_admin_user( $Config{ $hostname . '.Username'}, $Config{ $hostname . '.Password'});
 
     return $s;

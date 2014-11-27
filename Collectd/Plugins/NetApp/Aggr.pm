@@ -25,6 +25,8 @@ use lib "/usr/lib/netapp-manageability-sdk-5.1/lib/perl/NetApp";
 use NaServer;
 use NaElement;
 
+use Data::Dumper;
+
 use Config::Simple;
 
 sub smode_aggr_df {
@@ -160,7 +162,7 @@ sub cdot_aggr_df {
 
 sub cdot_aggr_df_reserved {
 
-    my %aggr_df;
+    my %aggr_df = ();
 
     my $hostname = shift;
 
@@ -176,8 +178,9 @@ sub cdot_aggr_df_reserved {
     $xi1->child_add($xi3);
     $xi3->child_add_string('state','<state>');
     my $xi4 = new NaElement('volume-id-attributes');
+    $xi1->child_add($xi4);
     $xi4->child_add_string('name','name');
-    $xi4->child_add_string('containing-aggregate-name','containing-aggregate-name');
+    $xi4->child_add_string('containing-aggregate-name','<containing-aggregate-name>');
     $api->child_add_string('max-records','10000');
 
     my $output = connect_filer($hostname)->invoke_elem($api);
@@ -274,17 +277,16 @@ sub aggr_module {
 
             if($aggr_df_reserved){
 
-                foreach my $aggr (keys %aggr_df_reserved){
+                foreach my $aggr (keys %$aggr_df_reserved){
 
-                    my $aggr_value_ref = $aggr_df_reserved->{$aggr};
-                    my @aggr_value = @{ $aggr_value_ref };
+                    my $aggr_value = $aggr_df_reserved->{$aggr};
 
                     plugin_dispatch_values({
                             plugin => 'df_aggr_reserved',
                             plugin_instance => $aggr,
                             type => 'df_complex',
                             type_instance => 'used',
-                            values => [$aggr_value[0]],
+                            values => [$aggr_value],
                             interval => '30',
                             host => $hostname,
                             });

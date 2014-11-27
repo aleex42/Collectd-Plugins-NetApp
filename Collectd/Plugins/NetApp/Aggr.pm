@@ -158,6 +158,70 @@ sub cdot_aggr_df {
     }
 }
 
+sub cdot_aggr_df_reserved {
+
+    my %aggr_df;
+
+    my $hostname = shift;
+
+    my $api = new NaElement('volume-get-iter');
+    my $xi = new NaElement('desired-attributes');
+    $api->child_add($xi);
+    my $xi1 = new NaElement('volume-attributes');
+    $xi->child_add($xi1);
+    my $xi2 = new NaElement('volume-space-attributes');
+    $xi1->child_add($xi2);
+    $xi2->child_add_string('size-total','<size-total>');
+    my $xi3 = new NaElement('volume-state-attributes');
+    $xi1->child_add($xi3);
+    $xi3->child_add_string('state','<state>');
+    my $xi4 = new NaElement('volume-id-attributes');
+    $xi4->child_add_string('name','name');
+    $xi4->child_add_string('containing-aggregate-name','containing-aggregate-name');
+    $api->child_add_string('max-records','10000');
+
+    my $output = connect_filer($hostname)->invoke_elem($api);
+
+    my $volumes = $output->child_get("attributes-list");
+
+    if($volumes){
+
+    my @result = $volumes->children_get();
+
+        foreach my $vol (@result){
+
+            my $vol_state_attributes = $vol->child_get("volume-state-attributes");
+
+            if($vol->child_get("volume-state-attributes")){
+
+                my $vol_info = $vol->child_get("volume-id-attributes");
+                my $vol_name = $vol_info->child_get_string("name");
+                my $aggr = $vol_info->child_get_string("containing-aggregate-name");
+
+                if($vol_state_attributes->child_get_string("state") eq "online"){
+
+                    my $vol_space = $vol->child_get("volume-space-attributes");
+
+                    my $total = $vol_space->child_get_string("size-total");
+
+                    if($aggr_df{$aggr}){
+                        $aggr_df{$aggr} += $total;
+                    } else {
+                        $aggr_df{$aggr} = $total;
+                    }
+                }
+            }
+        }
+
+        return \%aggr_df;
+
+    } else {
+
+        return undef;
+
+    }
+}
+
 sub aggr_module {
 
     my ($hostname, $filer_os) = @_;
@@ -200,6 +264,27 @@ sub aggr_module {
                             type => 'disk_ops',
                             type_instance => $aggr,
                             values => [$aggr_value[2], $aggr_value[3]],
+                            interval => '30',
+                            host => $hostname,
+                            });
+                }
+            }
+
+            my $aggr_df_reserved = cdot_aggr_df_reserved($hostname);
+
+            if($aggr_df_reserved){
+
+                foreach my $aggr (keys %aggr_df_reserved){
+
+                    my $aggr_value_ref = $aggr_df_reserved->{$aggr};
+                    my @aggr_value = @{ $aggr_value_ref };
+
+                    plugin_dispatch_values({
+                            plugin => 'df_aggr_reserved',
+                            plugin_instance => $aggr,
+                            type => 'df_complex',
+                            type_instance => 'used',
+                            values => [$aggr_value[0]],
                             interval => '30',
                             host => $hostname,
                             });

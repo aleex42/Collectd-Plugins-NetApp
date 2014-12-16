@@ -281,14 +281,17 @@ sub cdot_vol_df {
                 my $vol_info = $vol->child_get("volume-id-attributes");
                 my $vol_name = $vol_info->child_get_string("name");
 
-                if($vol_state_attributes->child_get_string("state") eq "online"){
+                unless($vol_name ~= m/^temp-/){
 
-                    my $vol_space = $vol->child_get("volume-space-attributes");
+                    if($vol_state_attributes->child_get_string("state") eq "online"){
 
-                    my $used = $vol_space->child_get_string("size-used");
-                    my $free = $vol_space->child_get_int("size-available");
+                        my $vol_space = $vol->child_get("volume-space-attributes");
 
-                    $df_return{$vol_name} = [ $used, $free ];
+                        my $used = $vol_space->child_get_string("size-used");
+                        my $free = $vol_space->child_get_int("size-available");
+
+                        $df_return{$vol_name} = [ $used, $free ];
+                    }
                 }
             }
         }

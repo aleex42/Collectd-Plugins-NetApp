@@ -281,7 +281,7 @@ sub cdot_vol_df {
                 my $vol_info = $vol->child_get("volume-id-attributes");
                 my $vol_name = $vol_info->child_get_string("name");
 
-                unless($vol_name ~= m/^temp-/){
+                unless($vol_name =~ m/^temp-/){
 
                     if($vol_state_attributes->child_get_string("state") eq "online"){
 

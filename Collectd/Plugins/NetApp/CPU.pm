@@ -10,6 +10,8 @@
 
 package Collectd::Plugins::NetApp::CPU;
 
+use Data::Dumper;
+
 use base 'Exporter';
 our @EXPORT = qw(cpu_module);
 
@@ -32,7 +34,7 @@ sub cdot_cpu {
     my $hostname = shift;
     my %cpu_return;
 
-    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "system");
+    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "processor:node");
 
     if($output){
         my $nodes = $output->child_get("attributes-list");
@@ -43,20 +45,22 @@ sub cdot_cpu {
             foreach my $node (@result){
 
                 my $node_uuid = $node->child_get_string("uuid");
-                my @node = split(/:/,$node_uuid);
-                my $node_name = $node[0];
+                my $node_name = $node->child_get_string("name");
+                my @node = split(/:/,$node_name);
+                $node_name = $node[0];
 
                 my $api = new NaElement('perf-object-get-instances');
 
                 my $xi = new NaElement('counters');
                 $api->child_add($xi);
-                $xi->child_add_string('counter','cpu_busy');
+                $xi->child_add_string('counter','processor_busy');
+                $xi->child_add_string('counter','processor_elapsed_time');
 
                 my $xi1 = new NaElement('instance-uuids');
                 $api->child_add($xi1);
 
                 $xi1->child_add_string('instance-uuid',$node_uuid);
-                $api->child_add_string('objectname','system');
+                $api->child_add_string('objectname','processor:node');
 
                 my $xo = connect_filer($hostname)->invoke_elem($api);
 
@@ -65,21 +69,30 @@ sub cdot_cpu {
                 if($instances){
                     my $instance_data = $instances->child_get("instance-data");
                     my $counters = $instance_data->child_get("counters");
+
                     if($counters){
-                        my $counter_data = $counters->child_get("counter-data");
-                        if($counter_data){
-                            my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
-                            $cpu_return{$node_name} = $rounded_busy;
+
+                        my @result = $counters->children_get();
+
+                        my %values = (processor_busy => undef, processor_elapsed_time => undef);
+
+                        foreach my $counter (@result){
+                            my $key = $counter->child_get_string("name");
+                            if(exists $values{$key}){
+                                $values{$key} = $counter->child_get_string("value");
+                            }
                         }
+
+                        my $busy = $values{processor_busy};
+                        my $time = $values{processor_elapsed_time};
+
+                        $cpu_return{$node_name} = [$time, $busy];
                     }
                 }
             }
         }
-
     }
-
     return \%cpu_return;
-
 }
 
 sub smode_cpu {
@@ -127,18 +140,19 @@ sub cpu_module {
 
             foreach my $node (keys %$cpu_result){
 
-                my $node_value = $cpu_result->{$node};
+                my $node_value_ref = $cpu_result->{$node};
+                my @node_value = @{ $node_value_ref };
 
                 plugin_dispatch_values({
                         plugin => 'cpu',
-                        plugin_instance => $node,
-                        type => 'cpu',
-                        type_instance => 'cpu_busy',
-                        values => [$node_value],
+                        #type => 'cpu',
+                        type => 'netapp_cpu',
+                        type_instance => $node,
+                        values => [$node_value[0], $node_value[1]],
                         interval => '30',
                         host => $hostname,
                         });
-            }
+            }            
         }
 
         default {

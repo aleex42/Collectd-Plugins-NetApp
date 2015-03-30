@@ -100,16 +100,12 @@ sub cdot_flash {
                     }
                 }
 
-                my $uuid = $instance->child_get_string("uuid");
                 my $name = $instance->child_get_string("name");
-
-                $aggr_transfers{$uuid} = [ $values{user_read_blocks}, $values{user_read_blocks_ssd}, $values{user_write_blocks}, $values{user_write_blocks_ssd} ];
+                $aggr_transfers{$name} = [ $values{user_read_blocks}, $values{user_read_blocks_ssd}, $values{user_write_blocks}, $values{user_write_blocks_ssd} ];
             }
         }
     }
-
     return \%aggr_transfers;
-
 }
 
 sub flash_module {
@@ -129,13 +125,10 @@ sub flash_module {
                     my $aggr_value_ref = $flash_result->{$aggr};
                     my @aggr_value = @{ $aggr_value_ref };                 
     
-                    my @names = split(/:/, $aggr);
-                    my $aggr_name = $names[2];
-
                     plugin_dispatch_values({
                             plugin => 'flash_usage',
                             type => 'netapp_flash_usage',
-                            type_instance => $aggr_name,
+                            type_instance => $aggr,
                             values => [@aggr_value],
                             interval => '30',
                             host => $hostname,

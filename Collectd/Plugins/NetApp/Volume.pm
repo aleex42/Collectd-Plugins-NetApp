@@ -93,18 +93,20 @@ sub cdot_vol_perf {
     $vol_xi1->child_add($vol_xi4);
     $vol_api->child_add_string('max-records','1000');
     my $vol_output = connect_filer($hostname)->invoke_elem($vol_api);
-    
+
     my $vol_instances_list = $vol_output->child_get("attributes-list");
     my @vol_instances = $vol_instances_list->children_get();
-    
+
     my %vol_uuids;
-    
+
     foreach my $vol (@vol_instances){
         my $vol_id_attributes = $vol->child_get("volume-id-attributes");
         my $vol_uuid = $vol_id_attributes->child_get_string("instance-uuid");
         my $vol_name = $vol_id_attributes->child_get_string("name");
-    
-        $vol_uuids{$vol_uuid} = $vol_name;
+
+        unless($vol_name =~ m/temp__/){   
+            $vol_uuids{$vol_uuid} = $vol_name;
+        }
     }
 
     my $api = new NaElement('perf-object-get-instances');
@@ -124,9 +126,9 @@ sub cdot_vol_perf {
     foreach my $vol_uuid (keys %vol_uuids){
         $xi1->child_add_string("instance-uuid", $vol_uuid);
     }
-    
+
     $api->child_add_string('objectname','volume');
-    
+
     my $xo = connect_filer($hostname)->invoke_elem($api);
     my $instances_list = $xo->child_get("instances");
     if($instances_list){
@@ -281,7 +283,7 @@ sub cdot_vol_df {
                 my $vol_info = $vol->child_get("volume-id-attributes");
                 my $vol_name = $vol_info->child_get_string("name");
 
-                unless($vol_name =~ m/^temp-/){
+                unless(($vol_name =~ m/^temp-/) || ($vol_name =~ m/^temp__/)){
 
                     if($vol_state_attributes->child_get_string("state") eq "online"){
 

@@ -69,27 +69,46 @@ sub thread_func {
             given($module){
 
                 when("CPU"){
-                    cpu_module($hostname, $filer_os);
+                    eval {
+                        cpu_module($hostname, $filer_os);
+                    };
+                    plugin_log("LOG_DEBUG", "cpu_module: $@") if $@;
                 }
 
                 when("Aggr"){
-                    aggr_module($hostname, $filer_os);
+                    eval {
+                        aggr_module($hostname, $filer_os);
+                    };
+                    plugin_log("LOG_DEBUG", "aggr_module: $@") if $@;
+
                 }
 
                 when("Volume"){
-                    volume_module($hostname, $filer_os);
+                    eval {
+                        volume_module($hostname, $filer_os);
+                    };
+                    plugin_log("LOG_DEBUG", "volume_module: $@") if $@;
                 }
 
                 when("NIC"){
-                    nic_module($hostname, $filer_os);
+                    eval {
+                        nic_module($hostname, $filer_os);
+                    };
+                    plugin_log("LOG_DEBUG", "nic_module: $@") if $@;
                 }
 
                 when("Disk"){
-                    disk_module($hostname, $filer_os);
+                    eval {
+                        disk_module($hostname, $filer_os);
+                    };
+                    plugin_log("LOG_DEBUG", "disk_module: $@") if $@;
                 }
 
                 when("Flash"){
-                    flash_module($hostname, $filer_os);
+                    eval {
+                        flash_module($hostname, $filer_os);
+                    };
+                    plugin_log("LOG_DEBUG", "flash_module: $@") if $@;
                 }
 
                 default {

@@ -55,6 +55,8 @@ sub smode_aggr_df {
 
             my $aggr_name = $aggr->child_get_string("name");
 
+#            plugin_log("LOG_DEBUG", "--> $aggr_name");
+
             my $counters_list = $aggr->child_get("counters");
             if($counters_list){
 
@@ -233,7 +235,14 @@ sub aggr_module {
 
         when("cDOT"){
 
-            my $aggr_df_result = cdot_aggr_df($hostname);
+            my $aggr_df_result;
+
+            eval {
+                $aggr_df_result = cdot_aggr_df($hostname);
+            };            
+            plugin_log("DEBUG_LOG", "cdot_aggr_df: $@") if $@;
+ 
+
 
             if($aggr_df_result){
 
@@ -273,7 +282,12 @@ sub aggr_module {
                 }
             }
 
-            my $aggr_df_reserved = cdot_aggr_df_reserved($hostname);
+            my $aggr_df_reserved;
+
+            eval {
+                $aggr_df_reserved = cdot_aggr_df_reserved($hostname);
+            };
+            plugin_log("DEBUG_LOG", "cdot_aggr_df_reserved: $@") if $@;
 
             if($aggr_df_reserved){
 
@@ -296,7 +310,12 @@ sub aggr_module {
 
         default {
 
-            my $aggr_df_result = smode_aggr_df($hostname);
+            my $aggr_df_result;
+
+            eval {
+                $aggr_df_result = smode_aggr_df($hostname);
+            };
+            plugin_log("DEBUG_LOG", "smode_aggr_df: $@") if $@;
 
             if($aggr_df_result){
 

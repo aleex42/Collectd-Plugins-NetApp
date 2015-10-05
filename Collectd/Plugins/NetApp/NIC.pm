@@ -77,6 +77,8 @@ sub cdot_lif {
 
                 my $nic_name = $nic->child_get_string("name");
 
+                #plugin_log("LOG_DEBUG", "--> $nic_name");
+
                 my $counters = $nic->child_get("counters");
                 if($counters){
 
@@ -146,6 +148,8 @@ sub cdot_port {
 
                 my $nic_name = $nic->child_get_string("uuid");
                 $nic_name =~ s/kernel://;
+
+#                plugin_log("LOG_DEBUG", "--> $nic_name");
 
                 my $counters = $nic->child_get("counters");
                 if($counters){
@@ -227,7 +231,11 @@ sub nic_module {
 
         when("cDOT"){
 
-            my $lif_result = cdot_lif($hostname);
+            my $lif_result;
+            eval {
+                $lif_result = cdot_lif($hostname);
+            };
+            plugin_log("DEBUG_LOG", "cdot_lif: $@") if $@;
 
             if($lif_result){
 
@@ -247,7 +255,11 @@ sub nic_module {
                 }
             }
 
-            my $port_result = cdot_port($hostname);
+            my $port_result;
+            eval {
+                $port_result = cdot_port($hostname);
+            };
+            plugin_log("DEBUG_LOG", "cdot_port: $@") if $@;
 
             if($port_result){
 
@@ -271,7 +283,11 @@ sub nic_module {
 
         default {
 
-            my $nic_result = smode_nic($hostname);
+            my $nic_result;
+            eval {
+                $nic_result = smode_nic($hostname);
+            };
+            plugin_log("DEBUG_LOG", "smode_nic: $@") if $@;
 
             if($nic_result){
 

@@ -140,6 +140,9 @@ sub cdot_vol_perf {
             my $vol_uuid = $volume->child_get_string("uuid");
             my $vol_name = $vol_uuids{$vol_uuid};
 
+            #plugin_log("LOG_DEBUG", "--> $vol_name");
+
+
             my $counters_list = $volume->child_get("counters");
             if($counters_list){
                 my @counters =  $counters_list->children_get();
@@ -383,7 +386,11 @@ sub volume_module {
 
         when("cDOT"){
 
-            my $df_result = cdot_vol_df($hostname);
+            my $df_result;
+            eval {
+                $df_result = cdot_vol_df($hostname);
+            };
+            plugin_log("DEBUG_LOG", "cdot_vol_df: $@") if $@;
 
             if($df_result){
 
@@ -414,7 +421,11 @@ sub volume_module {
                 }                   
             }
 
-            my $perf_result = cdot_vol_perf($hostname);
+            my $perf_result;
+            eval {
+                $perf_result = cdot_vol_perf($hostname);
+            };
+            plugin_log("DEBUG_LOG", "cdot_vol_perf: $@") if $@;
 
             if($perf_result){
 
@@ -452,7 +463,11 @@ sub volume_module {
                 }
             }
 
-            my $qos_result = cdot_qos_policy($hostname);
+            my $qos_result;
+            eval {
+                $qos_result = cdot_qos_policy($hostname);
+            };
+            plugin_log("DEBUG_LOG", "cdot_qos_policy: $@") if $@;
 
             if($qos_result){
 
@@ -475,8 +490,12 @@ sub volume_module {
         }
 
         default {
-
-            my $perf_result = smode_vol_perf($hostname);
+    
+            my $perf_result;
+            eval {
+                $perf_result = smode_vol_perf($hostname);
+            };
+            plugin_log("DEBUG_LOG", "smode_vol_perf: $@") if $@;
 
             if($perf_result){
 
@@ -515,7 +534,11 @@ sub volume_module {
 
             }
 
-            my $df_result = smode_vol_df($hostname);
+            my $df_result;
+            eval {
+                $df_result = smode_vol_df($hostname);
+            };
+            plugin_log("DEBUG_LOG", "smode_vol_df: $@") if $@;
 
             if($df_result){
 

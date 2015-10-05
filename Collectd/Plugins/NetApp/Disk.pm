@@ -207,7 +207,11 @@ sub disk_module {
 
         when("cDOT"){
 
-            my $disk_result = cdot_disk($hostname);
+            my $disk_result;
+            eval {
+                $disk_result = cdot_disk($hostname);
+            };
+            plugin_log("DEBUG_LOG", "cdot_disk: $@") if $@;
 
             if($disk_result){
 
@@ -230,7 +234,11 @@ sub disk_module {
 
         default {
 
-            my $disk_result = smode_disk($hostname);
+            my $disk_result;
+            eval {
+                $disk_result = smode_disk($hostname);
+            };
+            plugin_log("DEBUG_LOG", "smode_disk: $@") if $@;
 
             if($disk_result){
 

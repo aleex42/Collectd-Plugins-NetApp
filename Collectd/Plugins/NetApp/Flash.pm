@@ -116,7 +116,11 @@ sub flash_module {
 
         when("cDOT"){
 
-            my $flash_result = cdot_flash($hostname);
+            my $flash_result;
+            eval {
+                $flash_result = cdot_flash($hostname);
+            };
+            plugin_log("DEBUG_LOG", "cdot_flash: $@") if $@;
 
             if($flash_result){
 

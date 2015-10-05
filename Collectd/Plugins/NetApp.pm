@@ -64,6 +64,8 @@ sub thread_func {
 
         foreach my $module (@modules_array){
 
+#            plugin_log("LOG_DEBUG", "Plugin $module: $hostname");
+
             given($module){
 
                 when("CPU"){
@@ -109,7 +111,9 @@ sub my_get {
     }
 
     foreach (@threads) {
-       $_->join(); # blocks until this thread exits
+        my $id = $_->tid();
+        $_->join(); # blocks until this thread exits
+    #    plugin_log("DEBUG_LOG", "ID: $id");
     }
 
     return 1;

@@ -136,7 +136,13 @@ sub cpu_module {
 
         when("cDOT"){
 
-            my $cpu_result = cdot_cpu($hostname);
+            my $cpu_result;
+
+            eval {
+                $cpu_result = cdot_cpu($hostname);
+            };
+            plugin_log("DEBUG_LOG", "cdot_cpu: $@") if $@;
+
 
             foreach my $node (keys %$cpu_result){
 
@@ -156,8 +162,14 @@ sub cpu_module {
         }
 
         default {
+               
+            my $cpu_result;
 
-            my $cpu_result = smode_cpu($hostname);
+            eval {
+                $cpu_result = smode_cpu($hostname);
+            };
+            plugin_log("DEBUG_LOG", "smode_cpu: $@") if $@;
+
 
             if($cpu_result){
 

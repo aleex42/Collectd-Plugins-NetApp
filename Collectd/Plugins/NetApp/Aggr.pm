@@ -49,7 +49,7 @@ sub smode_aggr_df {
     eval {
         $out = connect_filer($hostname)->invoke_elem($in);
     };
-    plugin_log("DEBUG_LOG", "connect fail smode_aggr_df: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_aggr_df: $@") if $@;
 
     my $instances_list = $out->child_get("instances");
     if($instances_list){
@@ -126,7 +126,12 @@ sub cdot_aggr_df {
     $counters->child_add_string("counter","user_reads");
     $counters->child_add_string("counter","user_writes");
     $in->child_add($counters);
-    my $out = connect_filer($hostname)->invoke_elem($in);
+
+    my $out;
+    eval {
+        $out = connect_filer($hostname)->invoke_elem($in);
+    };
+    plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df") if $@;
 
     my $instances_list = $out->child_get("instances");
     if($instances_list){
@@ -243,7 +248,7 @@ sub aggr_module {
             eval {
                 $aggr_df_result = cdot_aggr_df($hostname);
             };            
-            plugin_log("DEBUG_LOG", "cdot_aggr_df: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df: $@") if $@;
  
 
 
@@ -290,7 +295,7 @@ sub aggr_module {
             eval {
                 $aggr_df_reserved = cdot_aggr_df_reserved($hostname);
             };
-            plugin_log("DEBUG_LOG", "cdot_aggr_df_reserved: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df_reserved: $@") if $@;
 
             if($aggr_df_reserved){
 
@@ -318,7 +323,7 @@ sub aggr_module {
             eval {
                 $aggr_df_result = smode_aggr_df($hostname);
             };
-            plugin_log("DEBUG_LOG", "smode_aggr_df: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* smode_aggr_df: $@") if $@;
 
             if($aggr_df_result){
 

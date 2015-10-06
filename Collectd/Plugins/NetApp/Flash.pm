@@ -35,7 +35,7 @@ sub cdot_flash {
     eval {
         $aggr_output = connect_filer($hostname)->invoke("aggr-get-iter");
     };
-    plugin_log("DEBUG_LOG", "connect fail cdot_flash: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_flash: $@") if $@;
 
     my $aggrs = $aggr_output->child_get("attributes-list");
     my @aggr_result = $aggrs->children_get();
@@ -58,7 +58,7 @@ sub cdot_flash {
     eval { 
         $name_output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "aggregate");
     };
-    plugin_log("DEBUG_LOG", "connect fail name_output: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail name_output: $@") if $@;
 
     my $name_list = $name_output->child_get("attributes-list");
     my @name_result = $name_list->children_get();
@@ -91,7 +91,7 @@ sub cdot_flash {
     eval {
         $perf_output = connect_filer($hostname)->invoke_elem($perf_api);
     };
-    plugin_log("DEBUG_LOG", "connect fail perf_output: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail perf_output: $@") if $@;
 
     my $instances = $perf_output->child_get("instances");
     if($instances){
@@ -133,7 +133,7 @@ sub flash_module {
             eval {
                 $flash_result = cdot_flash($hostname);
             };
-            plugin_log("DEBUG_LOG", "cdot_flash: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* cdot_flash: $@") if $@;
 
             if($flash_result){
 

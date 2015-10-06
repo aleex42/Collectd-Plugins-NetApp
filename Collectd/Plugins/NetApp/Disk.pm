@@ -43,7 +43,7 @@ sub smode_disk {
     eval {
         $out = connect_filer($hostname)->invoke_elem($in);
     };
-    plugin_log("DEBUG_LOG", "connect fail smode_disk: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_disk: $@") if $@;
 
     my ($raid_name, $disk_busy, $base_disk_busy);
 
@@ -110,7 +110,7 @@ sub cdot_disk {
     eval {
         $disk_output = connect_filer($hostname)->invoke_elem($api);
     };
-    plugin_log("DEBUG_LOG", "connect fail cdot_disk: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_disk: $@") if $@;
 
     my $disks = $disk_output->child_get("attributes-list");
    
@@ -157,7 +157,7 @@ sub cdot_disk {
     eval {
         $perf_output = connect_filer($hostname)->invoke_elem($perf_api);
     };
-    plugin_log("DEBUG_LOG", "connect fail perf_output: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail perf_output: $@") if $@;
 
     my $instances = $perf_output->child_get("instances");
     if($instances){
@@ -224,7 +224,7 @@ sub disk_module {
             eval {
                 $disk_result = cdot_disk($hostname);
             };
-            plugin_log("DEBUG_LOG", "cdot_disk: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* cdot_disk: $@") if $@;
 
             if($disk_result){
 
@@ -251,7 +251,7 @@ sub disk_module {
             eval {
                 $disk_result = smode_disk($hostname);
             };
-            plugin_log("DEBUG_LOG", "smode_disk: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* smode_disk: $@") if $@;
 
             if($disk_result){
 

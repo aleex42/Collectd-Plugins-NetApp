@@ -37,7 +37,7 @@ sub cdot_lif {
     eval {
         $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "lif");
     };
-    plugin_log("DEBUG_LOG", "connect fail cdot_lif: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_lif: $@") if $@;
 
     my $nics = $output->child_get("attributes-list");
 
@@ -74,7 +74,7 @@ sub cdot_lif {
         eval {
             $xo = connect_filer($hostname)->invoke_elem($api);
         };
-        plugin_log("DEBUG_LOG", "connect fail nics: $@") if $@;
+        plugin_log("DEBUG_LOG", "*DEBUG* connect fail nics: $@") if $@;
 
         my $instances = $xo->child_get("instances");
         if($instances){
@@ -121,7 +121,7 @@ sub cdot_port {
     eval {
         $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "nic_common");
     };
-    plugin_log("DEBUG_LOG", "connect fail cdot_port: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_port: $@") if $@;
 
     my $nics = $output->child_get("attributes-list");
 
@@ -153,7 +153,7 @@ sub cdot_port {
         eval {
             $xo = connect_filer($hostname)->invoke_elem($api);
         }; 
-        plugin_log("DEBUG_LOG", "connect fail cdot_port: $@") if $@;
+        plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_port: $@") if $@;
 
         my $instances = $xo->child_get("instances");
         if($instances){
@@ -206,7 +206,7 @@ sub smode_nic {
     eval {
         $out = connect_filer($hostname)->invoke_elem($in);
     };
-    plugin_log("DEBUG_LOG", "connect fail smode_nic: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_nic: $@") if $@;
 
     my $instances_list = $out->child_get("instances");
     
@@ -253,7 +253,7 @@ sub nic_module {
             eval {
                 $lif_result = cdot_lif($hostname);
             };
-            plugin_log("DEBUG_LOG", "cdot_lif: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* cdot_lif: $@") if $@;
 
             if($lif_result){
 
@@ -277,7 +277,7 @@ sub nic_module {
             eval {
                 $port_result = cdot_port($hostname);
             };
-            plugin_log("DEBUG_LOG", "cdot_port: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* cdot_port: $@") if $@;
 
             if($port_result){
 
@@ -305,7 +305,7 @@ sub nic_module {
             eval {
                 $nic_result = smode_nic($hostname);
             };
-            plugin_log("DEBUG_LOG", "smode_nic: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* smode_nic: $@") if $@;
 
             if($nic_result){
 

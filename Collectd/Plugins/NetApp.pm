@@ -72,14 +72,14 @@ sub thread_func {
                     eval {
                         cpu_module($hostname, $filer_os);
                     };
-                    plugin_log("LOG_DEBUG", "cpu_module: $@") if $@;
+                    plugin_log("LOG_DEBUG", "*DEBUG* cpu_module: $@") if $@;
                 }
 
                 when("Aggr"){
                     eval {
                         aggr_module($hostname, $filer_os);
                     };
-                    plugin_log("LOG_DEBUG", "aggr_module: $@") if $@;
+                    plugin_log("LOG_DEBUG", "*DEBUG* aggr_module: $@") if $@;
 
                 }
 
@@ -87,28 +87,28 @@ sub thread_func {
                     eval {
                         volume_module($hostname, $filer_os);
                     };
-                    plugin_log("LOG_DEBUG", "volume_module: $@") if $@;
+                    plugin_log("LOG_DEBUG", "*DEBUG* volume_module: $@") if $@;
                 }
 
                 when("NIC"){
                     eval {
                         nic_module($hostname, $filer_os);
                     };
-                    plugin_log("LOG_DEBUG", "nic_module: $@") if $@;
+                    plugin_log("LOG_DEBUG", "*DEBUG* nic_module: $@") if $@;
                 }
 
                 when("Disk"){
                     eval {
                         disk_module($hostname, $filer_os);
                     };
-                    plugin_log("LOG_DEBUG", "disk_module: $@") if $@;
+                    plugin_log("LOG_DEBUG", "*DEBUG* disk_module: $@") if $@;
                 }
 
                 when("Flash"){
                     eval {
                         flash_module($hostname, $filer_os);
                     };
-                    plugin_log("LOG_DEBUG", "flash_module: $@") if $@;
+                    plugin_log("LOG_DEBUG", "*DEBUG* flash_module: $@") if $@;
                 }
 
                 default {

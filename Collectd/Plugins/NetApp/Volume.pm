@@ -47,7 +47,7 @@ sub smode_vol_perf {
     eval {
         $out = connect_filer($hostname)->invoke_elem($in);
     };
-    plugin_log("DEBUG_LOG", "connect fail smode_vol_perf: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_vol_perf: $@") if $@;
 
     my $instances_list = $out->child_get("instances");
 
@@ -101,7 +101,7 @@ sub cdot_vol_perf {
     eval {  
         $vol_output = connect_filer($hostname)->invoke_elem($vol_api);
     };
-    plugin_log("DEBUG_LOG", "connect fail cdot_vol_perf: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
 
 
     my $vol_instances_list = $vol_output->child_get("attributes-list");
@@ -143,7 +143,7 @@ sub cdot_vol_perf {
     eval {
         $xo = connect_filer($hostname)->invoke_elem($api);
     };
-    plugin_log("DEBUG_LOG", "connect fail cdot_vol_perf: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
 
     my $instances_list = $xo->child_get("instances");
     if($instances_list){
@@ -192,7 +192,7 @@ sub cdot_qos_policy {
     eval {
         $output = connect_filer($hostname)->invoke_elem($api);
     };
-    plugin_log("DEBUG_LOG", "connect fail cdot_qos_policy: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_qos_policy: $@") if $@;
 
     my %policy_volume = ();
     my $workloads = $output->child_get("attributes-list");
@@ -228,7 +228,7 @@ sub cdot_qos_policy {
     eval {
         $xo = connect_filer($hostname)->invoke_elem($instance_api);
     };
-    plugin_log("DEBUG_LOG", "connect fail cdot_qos_policy: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_qos_policy: $@") if $@;
 
     my $instances = $xo->child_get("instances");
     if($instances){
@@ -297,7 +297,7 @@ sub cdot_vol_df {
     eval {
         $output = connect_filer($hostname)->invoke_elem($api);
     };
-    plugin_log("DEBUG_LOG", "connect fail cdot_vol_df: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_vol_df: $@") if $@;
 
     my $volumes = $output->child_get("attributes-list");
 
@@ -347,7 +347,7 @@ sub smode_vol_df {
     eval {  
         $out = connect_filer($hostname)->invoke("volume-list-info");
     };
-    plugin_log("DEBUG_LOG", "connect fail smode_vol_df: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_vol_df: $@") if $@;
 
     my $instances_list = $out->child_get("volumes");
     
@@ -366,7 +366,7 @@ sub smode_vol_df {
             eval {
                 $snap_out = connect_filer($hostname)->invoke_elem($snap);
             };
-            plugin_log("DEBUG_LOG", "connect fail smode_vol_df: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_vol_df: $@") if $@;
             
             my $snap_instances_list = $snap_out->child_get("snapshots");
 
@@ -427,7 +427,7 @@ sub volume_module {
             eval {
                 $df_result = cdot_vol_df($hostname);
             };
-            plugin_log("DEBUG_LOG", "cdot_vol_df: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* cdot_vol_df: $@") if $@;
 
             if($df_result){
 
@@ -462,7 +462,7 @@ sub volume_module {
             eval {
                 $perf_result = cdot_vol_perf($hostname);
             };
-            plugin_log("DEBUG_LOG", "cdot_vol_perf: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* cdot_vol_perf: $@") if $@;
 
             if($perf_result){
 
@@ -504,7 +504,7 @@ sub volume_module {
             eval {
                 $qos_result = cdot_qos_policy($hostname);
             };
-            plugin_log("DEBUG_LOG", "cdot_qos_policy: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* cdot_qos_policy: $@") if $@;
 
             if($qos_result){
 
@@ -532,7 +532,7 @@ sub volume_module {
             eval {
                 $perf_result = smode_vol_perf($hostname);
             };
-            plugin_log("DEBUG_LOG", "smode_vol_perf: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* smode_vol_perf: $@") if $@;
 
             if($perf_result){
 
@@ -575,7 +575,7 @@ sub volume_module {
             eval {
                 $df_result = smode_vol_df($hostname);
             };
-            plugin_log("DEBUG_LOG", "smode_vol_df: $@") if $@;
+            plugin_log("DEBUG_LOG", "*DEBUG* smode_vol_df: $@") if $@;
 
             if($df_result){
 

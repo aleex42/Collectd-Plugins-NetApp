@@ -33,7 +33,11 @@ sub cdot_lif {
     my %nic_return;
     my @nics;
 
-    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "lif");
+    my $output;
+    eval {
+        $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "lif");
+    };
+    plugin_log("DEBUG_LOG", "connect fail cdot_lif: $@") if $@;
 
     my $nics = $output->child_get("attributes-list");
 
@@ -66,8 +70,12 @@ sub cdot_lif {
     
         $api->child_add_string('objectname','lif');
     
-        my $xo = connect_filer($hostname)->invoke_elem($api);
-    
+        my $xo;
+        eval {
+            $xo = connect_filer($hostname)->invoke_elem($api);
+        };
+        plugin_log("DEBUG_LOG", "connect fail nics: $@") if $@;
+
         my $instances = $xo->child_get("instances");
         if($instances){
 
@@ -109,7 +117,11 @@ sub cdot_port {
     my %port_return;
     my @nics;
 
-    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "nic_common");
+    my $output;
+    eval {
+        $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "nic_common");
+    };
+    plugin_log("DEBUG_LOG", "connect fail cdot_port: $@") if $@;
 
     my $nics = $output->child_get("attributes-list");
 
@@ -137,7 +149,11 @@ sub cdot_port {
 
         $api->child_add_string('objectname','nic_common');
 
-        my $xo = connect_filer($hostname)->invoke_elem($api);
+        my $xo;
+        eval {
+            $xo = connect_filer($hostname)->invoke_elem($api);
+        }; 
+        plugin_log("DEBUG_LOG", "connect fail cdot_port: $@") if $@;
 
         my $instances = $xo->child_get("instances");
         if($instances){
@@ -148,8 +164,6 @@ sub cdot_port {
 
                 my $nic_name = $nic->child_get_string("uuid");
                 $nic_name =~ s/kernel://;
-
-#                plugin_log("LOG_DEBUG", "--> $nic_name");
 
                 my $counters = $nic->child_get("counters");
                 if($counters){
@@ -188,7 +202,11 @@ sub smode_nic {
     $counters->child_add_string("counter","send_data");
     $in->child_add($counters);
 
-    my $out = connect_filer($hostname)->invoke_elem($in);
+    my $out;
+    eval {
+        $out = connect_filer($hostname)->invoke_elem($in);
+    };
+    plugin_log("DEBUG_LOG", "connect fail smode_nic: $@") if $@;
 
     my $instances_list = $out->child_get("instances");
     

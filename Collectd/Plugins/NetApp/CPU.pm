@@ -34,7 +34,11 @@ sub cdot_cpu {
     my $hostname = shift;
     my %cpu_return;
 
-    my $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "processor:node");
+    my $output;
+    eval {
+        $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "processor:node");
+    };
+    plugin_log("DEBUG_LOG", "connect fail cdot_cpu: $@") if $@;
 
     if($output){
         my $nodes = $output->child_get("attributes-list");
@@ -105,7 +109,13 @@ sub smode_cpu {
     $api->child_add($xi);
     $xi->child_add_string('counter','cpu_busy');
     $api->child_add_string('objectname','system');
-    my $xo = connect_filer($hostname)->invoke_elem($api);
+
+    my $xo;
+    eval {
+        $xo = connect_filer($hostname)->invoke_elem($api);
+    };
+    plugin_log("DEBUG_LOG", "connect fail smode_cpu: $@") if $@;
+
 
     my $instances = $xo->child_get("instances");
     

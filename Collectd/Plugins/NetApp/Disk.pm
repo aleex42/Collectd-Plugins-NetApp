@@ -39,7 +39,11 @@ sub smode_disk {
     $counters->child_add_string("counter","base_for_disk_busy");
     $in->child_add($counters);
 
-    my $out = connect_filer($hostname)->invoke_elem($in);
+    my $out;
+    eval {
+        $out = connect_filer($hostname)->invoke_elem($in);
+    };
+    plugin_log("DEBUG_LOG", "connect fail smode_disk: $@") if $@;
 
     my ($raid_name, $disk_busy, $base_disk_busy);
 
@@ -102,7 +106,11 @@ sub cdot_disk {
     $xi7->child_add($xi9);
     $xi8->child_add_string('aggregate-name','<aggregate-name>');
 
-    my $disk_output = connect_filer($hostname)->invoke_elem($api);
+    my $disk_output;
+    eval {
+        $disk_output = connect_filer($hostname)->invoke_elem($api);
+    };
+    plugin_log("DEBUG_LOG", "connect fail cdot_disk: $@") if $@;
 
     my $disks = $disk_output->child_get("attributes-list");
    
@@ -144,7 +152,12 @@ sub cdot_disk {
         }
     }
     $perf_api->child_add_string('objectname','disk');
-    my $perf_output = connect_filer($hostname)->invoke_elem($perf_api);
+
+    my $perf_output;
+    eval {
+        $perf_output = connect_filer($hostname)->invoke_elem($perf_api);
+    };
+    plugin_log("DEBUG_LOG", "connect fail perf_output: $@") if $@;
 
     my $instances = $perf_output->child_get("instances");
     if($instances){

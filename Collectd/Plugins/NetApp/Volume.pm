@@ -42,8 +42,12 @@ sub smode_vol_perf {
     $counters->child_add_string("counter","write_latency");
     $counters->child_add_string("counter","read_latency");
     $in->child_add($counters);
-
-    my $out = connect_filer($hostname)->invoke_elem($in);
+   
+    my $out;
+    eval {
+        $out = connect_filer($hostname)->invoke_elem($in);
+    };
+    plugin_log("DEBUG_LOG", "connect fail smode_vol_perf: $@") if $@;
 
     my $instances_list = $out->child_get("instances");
 
@@ -92,7 +96,13 @@ sub cdot_vol_perf {
     $vol_xi4->child_add_string('instance-uuid','instance-uuid');
     $vol_xi1->child_add($vol_xi4);
     $vol_api->child_add_string('max-records','1000');
-    my $vol_output = connect_filer($hostname)->invoke_elem($vol_api);
+
+    my $vol_output;
+    eval {  
+        $vol_output = connect_filer($hostname)->invoke_elem($vol_api);
+    };
+    plugin_log("DEBUG_LOG", "connect fail cdot_vol_perf: $@") if $@;
+
 
     my $vol_instances_list = $vol_output->child_get("attributes-list");
     my @vol_instances = $vol_instances_list->children_get();
@@ -129,7 +139,12 @@ sub cdot_vol_perf {
 
     $api->child_add_string('objectname','volume');
 
-    my $xo = connect_filer($hostname)->invoke_elem($api);
+    my $xo;
+    eval {
+        $xo = connect_filer($hostname)->invoke_elem($api);
+    };
+    plugin_log("DEBUG_LOG", "connect fail cdot_vol_perf: $@") if $@;
+
     my $instances_list = $xo->child_get("instances");
     if($instances_list){
 
@@ -172,7 +187,12 @@ sub cdot_qos_policy {
 
     my $api = new NaElement('qos-workload-get-iter');
     $api->child_add_string('max-records','10000');
-    my $output = connect_filer($hostname)->invoke_elem($api);
+ 
+    my $output;
+    eval {
+        $output = connect_filer($hostname)->invoke_elem($api);
+    };
+    plugin_log("DEBUG_LOG", "connect fail cdot_qos_policy: $@") if $@;
 
     my %policy_volume = ();
     my $workloads = $output->child_get("attributes-list");
@@ -204,7 +224,11 @@ sub cdot_qos_policy {
 
     $instance_api->child_add_string('objectname','workload');
 
-    my $xo = connect_filer($hostname)->invoke_elem($instance_api);
+    my $xo;
+    eval {
+        $xo = connect_filer($hostname)->invoke_elem($instance_api);
+    };
+    plugin_log("DEBUG_LOG", "connect fail cdot_qos_policy: $@") if $@;
 
     my $instances = $xo->child_get("instances");
     if($instances){
@@ -269,7 +293,11 @@ sub cdot_vol_df {
     $xi4->child_add_string('name','name');
     $api->child_add_string('max-records','1000');
 
-    my $output = connect_filer($hostname)->invoke_elem($api);
+    my $output;
+    eval {
+        $output = connect_filer($hostname)->invoke_elem($api);
+    };
+    plugin_log("DEBUG_LOG", "connect fail cdot_vol_df: $@") if $@;
 
     my $volumes = $output->child_get("attributes-list");
 
@@ -315,7 +343,11 @@ sub smode_vol_df {
     my $hostname = shift;
     my %df_return;
 
-    my $out = connect_filer($hostname)->invoke("volume-list-info");
+    my $out;
+    eval {  
+        $out = connect_filer($hostname)->invoke("volume-list-info");
+    };
+    plugin_log("DEBUG_LOG", "connect fail smode_vol_df: $@") if $@;
 
     my $instances_list = $out->child_get("volumes");
     
@@ -329,8 +361,13 @@ sub smode_vol_df {
 
             my $snap = NaElement->new("snapshot-list-info");
             $snap->child_add_string("volume",$vol_name);
-            my $snap_out = connect_filer($hostname)->invoke_elem($snap);
 
+            my $snap_out;
+            eval {
+                $snap_out = connect_filer($hostname)->invoke_elem($snap);
+            };
+            plugin_log("DEBUG_LOG", "connect fail smode_vol_df: $@") if $@;
+            
             my $snap_instances_list = $snap_out->child_get("snapshots");
 
             if($snap_instances_list){

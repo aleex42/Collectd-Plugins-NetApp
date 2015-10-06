@@ -44,7 +44,12 @@ sub smode_aggr_df {
     $counters->child_add_string("counter","user_reads");
     $counters->child_add_string("counter","user_writes");
     $in->child_add($counters);
-    my $out = connect_filer($hostname)->invoke_elem($in);
+    
+    my $out;
+    eval {
+        $out = connect_filer($hostname)->invoke_elem($in);
+    };
+    plugin_log("DEBUG_LOG", "connect fail smode_aggr_df: $@") if $@;
 
     my $instances_list = $out->child_get("instances");
     if($instances_list){
@@ -54,8 +59,6 @@ sub smode_aggr_df {
         foreach my $aggr (@instances){
 
             my $aggr_name = $aggr->child_get_string("name");
-
-#            plugin_log("LOG_DEBUG", "--> $aggr_name");
 
             my $counters_list = $aggr->child_get("counters");
             if($counters_list){

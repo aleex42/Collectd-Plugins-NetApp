@@ -44,7 +44,7 @@ sub my_config {
 }
 
 sub my_log {
-        plugin_log shift @_, join " ", "$plugin_name", @_;
+#        plugin_log shift @_, join " ", "$plugin_name", @_;
 }
 
 sub my_init {
@@ -54,6 +54,7 @@ sub my_init {
 sub thread_func {
 
     my $hostname = shift;
+    $SIG{'KILL'} = sub { plugin_log("LOG_INFO", "*TIMEOUT* $hostname GOT KILLED") };
     
     my $filer_os = $Config{ $hostname . '.Mode'};
     my $modules = $Config{ $hostname . '.Modules'};
@@ -63,8 +64,6 @@ sub thread_func {
         my @modules_array = @{ $modules };
 
         foreach my $module (@modules_array){
-
-#            plugin_log("LOG_DEBUG", "Plugin $module: $hostname");
 
             given($module){
 
@@ -121,20 +120,30 @@ sub thread_func {
 
 sub my_get {
 
+    plugin_log("LOG_DEBUG", "*DEBUG* started my get");
+
     my @hosts = keys %{ $cfg->{_DATA}};
 
     my @threads = ();
 
     foreach my $host (@hosts)  {
        push (@threads, threads->create (\&thread_func, $host));
+       plugin_log("LOG_DEBUG", "*DEBUG* new thread $host");
     }
 
-    foreach (@threads) {
-        my $id = $_->tid();
+    sleep 30;
+    plugin_log("LOG_DEBUG", "*DEBUG* READY ". threads->list(threads::joinable));
+    foreach (threads->list(threads::joinable)) {
         $_->join(); # blocks until this thread exits
-    #    plugin_log("DEBUG_LOG", "ID: $id");
     }
 
+    plugin_log("LOG_DEBUG", "*DEBUG* RUNNING ". threads->list(threads::running));
+    foreach (threads->list(threads::running)) {
+        $_->kill('KILL');
+        $_->detach();
+    }
+
+    plugin_log("LOG_DEBUG", "*DEBUG* return 1");
     return 1;
 }
 

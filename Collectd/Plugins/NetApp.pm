@@ -51,11 +51,11 @@ sub my_init {
     1;
 }
 
-sub thread_func {
+sub host_thread_func {
 
     my $hostname = shift;
-    $SIG{'KILL'} = sub { plugin_log("LOG_INFO", "*TIMEOUT* $hostname GOT KILLED") };
-    
+    $SIG{'KILL'} = sub { plugin_log("LOG_INFO", "*TIMEOUT* host $hostname GOT KILLED") };
+
     my $filer_os = $Config{ $hostname . '.Mode'};
     my $modules = $Config{ $hostname . '.Modules'};
 
@@ -63,57 +63,83 @@ sub thread_func {
 
         my @modules_array = @{ $modules };
 
+        my @threads = ();
+
         foreach my $module (@modules_array){
+            push (@threads, threads->create (\&module_thread_func, $module, $hostname, $filer_os));
+            plugin_log("LOG_DEBUG", "*DEBUG* new module thread $hostname/$module");
+        }
 
-            given($module){
+        sleep 30;
+        plugin_log("LOG_DEBUG", "*DEBUG* modules READY ". threads->list(threads::joinable));
+        foreach (threads->list(threads::joinable)) {
+            $_->join(); # blocks until this thread exits
+        }
 
-                when("CPU"){
-                    eval {
-                        cpu_module($hostname, $filer_os);
-                    };
-                    plugin_log("LOG_DEBUG", "*DEBUG* cpu_module: $@") if $@;
-                }
+        plugin_log("LOG_DEBUG", "*DEBUG* modules RUNNING ". threads->list(threads::running));
+        foreach (threads->list(threads::running)) {
+            $_->kill('KILL');
+            $_->detach();
+        }
 
-                when("Aggr"){
-                    eval {
-                        aggr_module($hostname, $filer_os);
-                    };
-                    plugin_log("LOG_DEBUG", "*DEBUG* aggr_module: $@") if $@;
+        plugin_log("LOG_DEBUG", "*DEBUG* modules return 1");
+        return 1;
+    }
+}
 
-                }
+sub module_thread_func {
 
-                when("Volume"){
-                    eval {
-                        volume_module($hostname, $filer_os);
-                    };
-                    plugin_log("LOG_DEBUG", "*DEBUG* volume_module: $@") if $@;
-                }
+    my ($module, $hostname, $filer_os) = @_;
 
-                when("NIC"){
-                    eval {
-                        nic_module($hostname, $filer_os);
-                    };
-                    plugin_log("LOG_DEBUG", "*DEBUG* nic_module: $@") if $@;
-                }
+    $SIG{'KILL'} = sub { plugin_log("LOG_INFO", "*TIMEOUT* module $hostname/$module GOT KILLED") };
 
-                when("Disk"){
-                    eval {
-                        disk_module($hostname, $filer_os);
-                    };
-                    plugin_log("LOG_DEBUG", "*DEBUG* disk_module: $@") if $@;
-                }
+    given($module){
 
-                when("Flash"){
-                    eval {
-                        flash_module($hostname, $filer_os);
-                    };
-                    plugin_log("LOG_DEBUG", "*DEBUG* flash_module: $@") if $@;
-                }
+        when("CPU"){
+            eval {
+                cpu_module($hostname, $filer_os);
+            };
+            plugin_log("LOG_DEBUG", "*DEBUG* cpu_module: $@") if $@;
+        }
 
-                default {
-                # nothing
-                }
-            }
+        when("Aggr"){
+            eval {
+                aggr_module($hostname, $filer_os);
+            };
+            plugin_log("LOG_DEBUG", "*DEBUG* aggr_module: $@") if $@;
+
+        }
+
+        when("Volume"){
+            eval {
+                volume_module($hostname, $filer_os);
+            };
+            plugin_log("LOG_DEBUG", "*DEBUG* volume_module: $@") if $@;
+        }
+
+        when("NIC"){
+            eval {
+                nic_module($hostname, $filer_os);
+            };
+            plugin_log("LOG_DEBUG", "*DEBUG* nic_module: $@") if $@;
+        }
+
+        when("Disk"){
+            eval {
+                disk_module($hostname, $filer_os);
+            };
+            plugin_log("LOG_DEBUG", "*DEBUG* disk_module: $@") if $@;
+        }
+
+        when("Flash"){
+            eval {
+                flash_module($hostname, $filer_os);
+            };
+            plugin_log("LOG_DEBUG", "*DEBUG* flash_module: $@") if $@;
+        }
+
+        default {
+# nothing
         }
     }
 }
@@ -127,17 +153,17 @@ sub my_get {
     my @threads = ();
 
     foreach my $host (@hosts)  {
-       push (@threads, threads->create (\&thread_func, $host));
-       plugin_log("LOG_DEBUG", "*DEBUG* new thread $host");
+       push (@threads, threads->create (\&host_thread_func, $host));
+       plugin_log("LOG_DEBUG", "*DEBUG* new host thread $host");
     }
 
     sleep 30;
-    plugin_log("LOG_DEBUG", "*DEBUG* READY ". threads->list(threads::joinable));
+    plugin_log("LOG_DEBUG", "*DEBUG* host READY ". threads->list(threads::joinable));
     foreach (threads->list(threads::joinable)) {
         $_->join(); # blocks until this thread exits
     }
 
-    plugin_log("LOG_DEBUG", "*DEBUG* RUNNING ". threads->list(threads::running));
+    plugin_log("LOG_DEBUG", "*DEBUG* host RUNNING ". threads->list(threads::running));
     foreach (threads->list(threads::running)) {
         $_->kill('KILL');
         $_->detach();

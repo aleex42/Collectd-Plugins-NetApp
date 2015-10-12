@@ -342,77 +342,128 @@ sub smode_vol_df {
 
     my $hostname = shift;
     my %df_return;
+    my $thr;
 
-    my $out;
-    eval {  
-        $out = connect_filer($hostname)->invoke("volume-list-info");
-    };
-    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_vol_df: $@") if $@;
+    my $iterator = NaElement->new("volume-list-info");
 
-    my $instances_list = $out->child_get("volumes");
-    
+    my $output = connect_filer($hostname)->invoke_elem($iterator);
+
+    my $instances_list = $output->child_get("volumes");
+
     if($instances_list){
 
         my @instances = $instances_list->children_get();
 
         foreach my $volume (@instances){
+            $thr = threads->create ({'context' => 'void'}, \&vol_df_thread_func, $hostname, $volume);
+        }
+    }
+}
 
-            my $vol_name = $volume->child_get_string("name");
+sub vol_df_thread_func {
 
-            my $snap = NaElement->new("snapshot-list-info");
-            $snap->child_add_string("volume",$vol_name);
+    my ($hostname, $volume) = @_;
 
-            my $snap_out;
-            eval {
-                $snap_out = connect_filer($hostname)->invoke_elem($snap);
-            };
-            plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_vol_df: $@") if $@;
-            
-            my $snap_instances_list = $snap_out->child_get("snapshots");
+    $SIG{'KILL'} = sub { plugin_log("LOG_DEBUG", "*TIMEOUT* volume_module $hostname/$volume GOT KILLED") };
 
-            if($snap_instances_list){
+    my $vol_name = $volume->child_get_string("name");
 
-                my @snap_instances = $snap_instances_list->children_get();
+    my $snap = NaElement->new("snapshot-list-info");
+    $snap->child_add_string("volume",$vol_name);
 
-                my $cumulative = 0;
+    my $snap_out;
+    eval {
+        $snap_out = connect_filer($hostname)->invoke_elem($snap);
+    };
+    #plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_vol_df: $@") if $@;
 
-                foreach my $snap (@snap_instances){
-                    if($snap->child_get_int("cumulative-total") > $cumulative){
-                        $cumulative = $snap->child_get_int("cumulative-total");
-                    }
-                }
+    my $snap_instances_list = $snap_out->child_get("snapshots");
 
-                my $snap_used = $cumulative*1024;
-                my $vol_free = $volume->child_get_int("size-available");
-                my $vol_used = $volume->child_get_int("size-used");
+    if($snap_instances_list){
 
-                my $snap_reserved = $volume->child_get_int("snapshot-blocks-reserved") * 1024;
-                my $snap_norm_used;
-                my $snap_reserve_free;
-                my $snap_reserve_used;        
+        my @snap_instances = $snap_instances_list->children_get();
 
-                if($snap_reserved > $snap_used){
-                    $snap_reserve_free = $snap_reserved - $snap_used;
-                    $snap_reserve_used = $snap_used;
-                    $snap_norm_used = 0;
-                } else {
-                    $snap_reserve_free = 0;
-                    $snap_reserve_used = $snap_reserved;
-                    $snap_norm_used = $snap_used - $snap_reserved;
-                }
+        my $cumulative = 0;
 
-                if ( $vol_used >= $snap_norm_used){
-                    $vol_used = $vol_used - $snap_norm_used;
-                } 
-
-                $df_return{$vol_name} = [ $vol_free, $vol_used, $snap_reserve_free, $snap_reserve_used, $snap_norm_used];
-
-            }           
+        foreach my $snap (@snap_instances){
+            if($snap->child_get_int("cumulative-total") > $cumulative){
+                $cumulative = $snap->child_get_int("cumulative-total");
+            }
         }
 
-    }
+        my $snap_used = $cumulative*1024;
+        my $vol_free = $volume->child_get_int("size-available");
+        my $vol_used = $volume->child_get_int("size-used");
 
-    return \%df_return;
+        my $snap_reserved = $volume->child_get_int("snapshot-blocks-reserved") * 1024;
+        my $snap_norm_used;
+        my $snap_reserve_free;
+        my $snap_reserve_used;
+
+        if($snap_reserved > $snap_used){
+            $snap_reserve_free = $snap_reserved - $snap_used;
+            $snap_reserve_used = $snap_used;
+            $snap_norm_used = 0;
+        } else {
+            $snap_reserve_free = 0;
+            $snap_reserve_used = $snap_reserved;
+            $snap_norm_used = $snap_used - $snap_reserved;
+        }
+
+        if ( $vol_used >= $snap_norm_used){
+            $vol_used = $vol_used - $snap_norm_used;
+        }
+
+        plugin_dispatch_values({
+                plugin => 'df_vol',
+                plugin_instance => $vol_name,
+                type => 'df_complex',
+                type_instance => 'free',
+                values => [$vol_free],
+                interval => '30',
+                host => $hostname,
+                });
+        
+        plugin_dispatch_values({
+                plugin => 'df_vol',
+                plugin_instance => $vol_name,
+                type => 'df_complex',
+                type_instance => 'used',
+                values => [$vol_used],
+                interval => '30',
+                host => $hostname,
+                });
+        
+        plugin_dispatch_values({
+                plugin => 'df_vol',
+                plugin_instance => $vol_name,
+                type => 'df_complex',
+                type_instance => 'snap_reserve_free',
+                values => [$snap_reserve_free],
+                interval => '30',
+                host => $hostname,
+                });
+        
+        plugin_dispatch_values({
+                plugin => 'df_vol',
+                plugin_instance => $vol_name,
+                type => 'df_complex',
+                type_instance => 'snap_reserve_used',
+                values => [$snap_reserve_used],
+                interval => '30',
+                host => $hostname,
+                });
+        
+        plugin_dispatch_values({
+                plugin => 'df_vol',
+                plugin_instance => $vol_name,
+                type => 'df_complex',
+                type_instance => 'snap_norm_used',
+                values => [$snap_norm_used],
+                interval => '30',
+                host => $hostname,
+                });
+     }
 }
 
 sub volume_module {
@@ -571,70 +622,8 @@ sub volume_module {
 
             }
 
-            my $df_result;
-            eval {
-                $df_result = smode_vol_df($hostname);
-            };
-            plugin_log("DEBUG_LOG", "*DEBUG* smode_vol_df: $@") if $@;
+            smode_vol_df($hostname);
 
-            if($df_result){
-
-                foreach my $vol (keys %$df_result){
-
-                    my $vol_value_ref = $df_result->{$vol};
-                    my @vol_value = @{ $vol_value_ref };
-
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
-                            type => 'df_complex',
-                            type_instance => 'free',
-                            values => [$vol_value[0]],
-                            interval => '30',
-                            host => $hostname,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
-                            type => 'df_complex',
-                            type_instance => 'used',
-                            values => [$vol_value[1]],
-                            interval => '30',
-                            host => $hostname,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
-                            type => 'df_complex',
-                            type_instance => 'snap_reserve_free',
-                            values => [$vol_value[2]],
-                            interval => '30',
-                            host => $hostname,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
-                            type => 'df_complex',
-                            type_instance => 'snap_reserve_used',
-                            values => [$vol_value[3]],
-                            interval => '30',
-                            host => $hostname,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
-                            type => 'df_complex',
-                            type_instance => 'snap_norm_used',
-                            values => [$vol_value[4]],
-                            interval => '30',
-                            host => $hostname,
-                            });
-                }
-            }
         }
     }
 

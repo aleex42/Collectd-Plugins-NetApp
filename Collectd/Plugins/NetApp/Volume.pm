@@ -342,7 +342,6 @@ sub smode_vol_df {
 
     my $hostname = shift;
     my %df_return;
-    my $thr;
 
     my $iterator = NaElement->new("volume-list-info");
 
@@ -355,7 +354,7 @@ sub smode_vol_df {
         my @instances = $instances_list->children_get();
 
         foreach my $volume (@instances){
-            $thr = threads->create ({'context' => 'void'}, \&vol_df_thread_func, $hostname, $volume);
+            threads->create ({'context' => 'void'}, \&vol_df_thread_func, $hostname, $volume);
         }
     }
 }
@@ -363,10 +362,9 @@ sub smode_vol_df {
 sub vol_df_thread_func {
 
     my ($hostname, $volume) = @_;
-
-    $SIG{'KILL'} = sub { plugin_log("LOG_DEBUG", "*TIMEOUT* volume_module $hostname/$volume GOT KILLED") };
-
     my $vol_name = $volume->child_get_string("name");
+
+    $SIG{'KILL'} = sub { plugin_log("LOG_DEBUG", "*TIMEOUT* volume_module $hostname/$vol_name GOT KILLED") };
 
     my $snap = NaElement->new("snapshot-list-info");
     $snap->child_add_string("volume",$vol_name);

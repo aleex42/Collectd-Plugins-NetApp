@@ -8,7 +8,10 @@ New, better and faster version of "netapp-7mode-collectd" and "netapp-cdot-colle
 
 Support for both <b>NetApp 7-Mode</b> and <b>NetApp Clustered Data ONTAP</b>.
 
-You need the NetApp Manageability SDK in "/usr/lib/netapp-manageability-sdk-5.1/lib/perl/NetApp".
+You need the NetApp Manageability SDK in "/usr/lib/netapp-manageability-sdk/lib/perl/NetApp".
+I recommend a symlink from the current version to this folder. For example:
+
+"/usr/lib/netapp-manageability-sdk-5.4/lib/perl/NetApp" -> "/usr/lib/netapp-manageability-sdk/lib/perl/NetApp"
 
 --
 

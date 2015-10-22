@@ -23,7 +23,7 @@ use feature qw(switch);
 use Collectd qw( :all );
 use Collectd::Plugins::NetApp::NACommon qw(connect_filer);
 
-use lib "/usr/lib/netapp-manageability-sdk-5.1/lib/perl/NetApp";
+use lib "/usr/lib/netapp-manageability-sdk/lib/perl/NetApp";
 use NaServer;
 use NaElement;
 

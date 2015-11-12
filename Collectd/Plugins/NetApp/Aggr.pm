@@ -32,15 +32,65 @@ use Config::Simple;
 sub smode_aggr_df {
 
     my $hostname = shift;
-    my (%df_return, $used_space, $total_space, $total_transfers);
+    my %df_return;
+    my %aggrs;
+
+    my $output = connect_filer($hostname)->invoke("volume-list-info");
+
+    my $vols = $output->child_get("volumes");
+    my @result = $vols->children_get();
+
+    foreach my $vol (@result){
+
+        my $aggr = $vol->child_get_string("containing-aggregate");
+        my $used = $vol->child_get_string("size-total");
+
+        if($aggrs{$aggr}){
+            $aggrs{$aggr} += $used;
+        } else {
+            $aggrs{$aggr} = $used;
+        }
+    }
+
+    my $in = NaElement->new("aggr-space-list-info");
+    
+    my $out;
+    eval {
+        $out = connect_filer($hostname)->invoke_elem($in);
+    };
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_aggr_df: $@") if $@;
+
+    my $aggrs = $out->child_get("aggregates");
+
+    if($aggrs){
+
+        my @aggr_result = $aggrs->children_get();
+
+        foreach my $aggr (@aggr_result){
+
+            my $aggr_name = $aggr->child_get_string("aggregate-name");
+            my $aggr_free = $aggr->child_get_string("size-free");
+            my $aggr_used = $aggr->child_get_string("size-volume-used");
+
+            $df_return{$aggr_name} = [ $aggr_used, $aggr_free, $aggrs{$aggr_name} ];
+
+        }
+
+        return \%df_return;
+
+    } else {
+        return undef;
+    }
+}
+
+sub smode_aggr_iops {
+
+    my $hostname = shift;
+    my %iops_return;
 
     my $in = NaElement->new("perf-object-get-instances");
     $in->child_add_string("objectname","aggregate");
     my $counters = NaElement->new("counters");
-    $counters->child_add_string("counter","wv_fsinfo_blks_total");
-    $counters->child_add_string("counter","wv_fsinfo_blks_used");
-    $counters->child_add_string("counter","wv_fsinfo_blks_reserve");
-    $counters->child_add_string("counter","wv_fsinfo_blks_snap_reserve_pct");
     $counters->child_add_string("counter","user_reads");
     $counters->child_add_string("counter","user_writes");
     $in->child_add($counters);
@@ -49,7 +99,7 @@ sub smode_aggr_df {
     eval {
         $out = connect_filer($hostname)->invoke_elem($in);
     };
-    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_aggr_df: $@") if $@;
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_aggr_iops: $@") if $@;
 
     my $instances_list = $out->child_get("instances");
     if($instances_list){
@@ -65,7 +115,7 @@ sub smode_aggr_df {
 
                 my @counters =  $counters_list->children_get();
 
-                my %values = (wv_fsinfo_blks_total => undef, wv_fsinfo_blks_used => undef, wv_fsinfo_blks_reserve => undef, wv_fsinfo_blks_snap_reserve_pct => undef, user_reads => undef, user_writes => undef );
+                my %values = (user_reads => undef, user_writes => undef );
 
                 foreach my $counter (@counters){
 
@@ -75,15 +125,11 @@ sub smode_aggr_df {
                     }
                 }
 
-                my $used_space = $values{wv_fsinfo_blks_used} * 4096;
-                my $usable_space = ($values{wv_fsinfo_blks_total} - $values{wv_fsinfo_blks_reserve} - $values{wv_fsinfo_blks_snap_reserve_pct} * $values{wv_fsinfo_blks_total} / 100)*4096;
-                my $free_space = $usable_space - $used_space;
-
-                $df_return{$aggr_name} = [ $used_space, $free_space, $values{user_reads}, $values{user_writes} ];
+                $iops_return{$aggr_name} = [ $values{user_reads}, $values{user_writes} ];
             }
         }
 
-        return \%df_return;
+        return \%iops_return;
 
     } else {
         return undef;
@@ -250,8 +296,6 @@ sub aggr_module {
             };            
             plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df: $@") if $@;
  
-
-
             if($aggr_df_result){
 
                 foreach my $aggr (keys %$aggr_df_result){
@@ -318,6 +362,31 @@ sub aggr_module {
 
         default {
 
+            my $aggr_iops_result;
+
+            eval {
+                $aggr_iops_result = smode_aggr_iops($hostname);
+            };
+            plugin_log("DEBUG_LOG", "*DEBUG* smode_aggr_iops: $@") if $@;
+
+            if($aggr_iops_result){
+
+                foreach my $aggr (keys %$aggr_iops_result){
+
+                    my $aggr_value_ref = $aggr_iops_result->{$aggr};
+                    my @aggr_value = @{ $aggr_value_ref };
+
+                    plugin_dispatch_values({
+                            plugin => 'iops_aggr',
+                            type => 'disk_ops',
+                            type_instance => $aggr,
+                            values => [$aggr_value[0], $aggr_value[1]],
+                            interval => '30',
+                            host => $hostname,
+                            });
+                }
+            }
+
             my $aggr_df_result;
 
             eval {
@@ -353,13 +422,15 @@ sub aggr_module {
                             });
 
                     plugin_dispatch_values({
-                            plugin => 'iops_aggr',
-                            type => 'disk_ops',
-                            type_instance => $aggr,
-                            values => [$aggr_value[2], $aggr_value[3]],
+                            plugin => 'df_aggr_reserved',
+                            plugin_instance => $aggr,
+                            type => 'df_complex',
+                            type_instance => 'used',
+                            values => [$aggr_value[2]],
                             interval => '30',
                             host => $hostname,
                             });
+
                 }
             }
         }

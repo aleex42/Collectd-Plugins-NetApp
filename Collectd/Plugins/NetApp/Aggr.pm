@@ -69,8 +69,10 @@ sub smode_aggr_df {
         foreach my $aggr (@aggr_result){
 
             my $aggr_name = $aggr->child_get_string("aggregate-name");
-            my $aggr_free = $aggr->child_get_string("size-free");
             my $aggr_used = $aggr->child_get_string("size-volume-used");
+            my $aggr_total = $aggr->child_get_string("size-nominal");
+
+            my $aggr_free = $aggr_total - $aggr_used;
 
             $df_return{$aggr_name} = [ $aggr_used, $aggr_free, $aggrs{$aggr_name} ];
 

@@ -30,11 +30,16 @@ sub connect_filer {
     my $cfg = new Config::Simple($ConfigFile);
     my %Config = $cfg->vars();
 
-    my $s = NaServer->new( $hostname, 1, 3 );
-    $s->set_transport_type('HTTPS');
+    my $mode = $Config{ $hostname . '.Mode'};
+
+    my $s = NaServer->new( $hostname, 1, 21 );
     $s->set_style('LOGIN');
     $s->set_timeout(10);
     $s->set_admin_user( $Config{ $hostname . '.Username'}, $Config{ $hostname . '.Password'});
+
+    if($mode eq "cDOT"){
+        $s->set_transport_type('HTTPS');
+    }
 
     return $s;
 }

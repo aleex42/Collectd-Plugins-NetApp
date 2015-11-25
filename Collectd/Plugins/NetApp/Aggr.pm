@@ -163,62 +163,69 @@ sub cdot_aggr_df {
     $in->child_add($instances);
 
     my $aggregates = $aggr_output->child_get("attributes-list");
-    my @aggr_result = $aggregates->children_get();
+    if($aggregates){
 
-    foreach my $aggr (@aggr_result){
-        my $instance = $aggr->child_get("uuid");
-        my $uuid = $instance->child_get_string("uuid");
-        $instances->child_add_string('instance-uuid',$uuid);
-    }
-
-    my $counters = NaElement->new("counters");
-    $counters->child_add_string("counter","wv_fsinfo_blks_total");
-    $counters->child_add_string("counter","wv_fsinfo_blks_used");
-    $counters->child_add_string("counter","wv_fsinfo_blks_reserve");
-    $counters->child_add_string("counter","wv_fsinfo_blks_snap_reserve_pct");
-    $counters->child_add_string("counter","user_reads");
-    $counters->child_add_string("counter","user_writes");
-    $in->child_add($counters);
-
-    my $out;
-    eval {
-        $out = connect_filer($hostname)->invoke_elem($in);
-    };
-    plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df") if $@;
-
-    my $instances_list = $out->child_get("instances");
-    if($instances_list){
-
-        my @instances = $instances_list->children_get();
-
-        foreach my $aggr (@instances){
-
-            my $aggr_name = $aggr->child_get_string("name");
-
-            my $counters_list = $aggr->child_get("counters");
-            if($counters_list){
-
-                my @counters =  $counters_list->children_get();
-
-                my %values = (wv_fsinfo_blks_total => undef, wv_fsinfo_blks_used => undef, wv_fsinfo_blks_reserve => undef, wv_fsinfo_blks_snap_reserve_pct => undef, user_reads => undef, user_writes => undef );
-
-                foreach my $counter (@counters){
-
-                    my $key = $counter->child_get_string("name");
-                    if(exists $values{$key}){
-                        $values{$key} = $counter->child_get_string("value");
-                    }
-                }
-
-                my $used_space = $values{wv_fsinfo_blks_used} * 4096;
-                my $usable_space = ($values{wv_fsinfo_blks_total} - $values{wv_fsinfo_blks_reserve} - $values{wv_fsinfo_blks_snap_reserve_pct} * $values{wv_fsinfo_blks_total} / 100)*4096;
-                my $free_space = $usable_space - $used_space;
-
-                $df_return{$aggr_name} = [ $used_space, $free_space, $values{user_reads}, $values{user_writes} ];      
-            }
+        my @aggr_result = $aggregates->children_get();
+    
+        foreach my $aggr (@aggr_result){
+            my $instance = $aggr->child_get("uuid");
+            my $uuid = $instance->child_get_string("uuid");
+            $instances->child_add_string('instance-uuid',$uuid);
         }
-        return \%df_return;
+    
+        my $counters = NaElement->new("counters");
+        $counters->child_add_string("counter","wv_fsinfo_blks_total");
+        $counters->child_add_string("counter","wv_fsinfo_blks_used");
+        $counters->child_add_string("counter","wv_fsinfo_blks_reserve");
+        $counters->child_add_string("counter","wv_fsinfo_blks_snap_reserve_pct");
+        $counters->child_add_string("counter","user_reads");
+        $counters->child_add_string("counter","user_writes");
+        $in->child_add($counters);
+    
+        my $out;
+        eval {
+            $out = connect_filer($hostname)->invoke_elem($in);
+        };
+        plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df") if $@;
+    
+        my $instances_list = $out->child_get("instances");
+        if($instances_list){
+    
+            my @instances = $instances_list->children_get();
+    
+            foreach my $aggr (@instances){
+    
+                my $aggr_name = $aggr->child_get_string("name");
+    
+                my $counters_list = $aggr->child_get("counters");
+                if($counters_list){
+    
+                    my @counters =  $counters_list->children_get();
+    
+                    my %values = (wv_fsinfo_blks_total => undef, wv_fsinfo_blks_used => undef, wv_fsinfo_blks_reserve => undef, wv_fsinfo_blks_snap_reserve_pct => undef, user_reads => undef, user_writes => undef );
+    
+                    foreach my $counter (@counters){
+    
+                        my $key = $counter->child_get_string("name");
+                        if(exists $values{$key}){
+                            $values{$key} = $counter->child_get_string("value");
+                        }
+                    }
+    
+                    my $used_space = $values{wv_fsinfo_blks_used} * 4096;
+                    my $usable_space = ($values{wv_fsinfo_blks_total} - $values{wv_fsinfo_blks_reserve} - $values{wv_fsinfo_blks_snap_reserve_pct} * $values{wv_fsinfo_blks_total} / 100)*4096;
+                    my $free_space = $usable_space - $used_space;
+    
+                    $df_return{$aggr_name} = [ $used_space, $free_space, $values{user_reads}, $values{user_writes} ];      
+                }
+            }
+            return \%df_return;
+        } else {
+            plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df no aggr instance found: $hostname");
+            return undef;
+        }
     } else {
+        plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df no aggregates found: $hostname");
         return undef;
     }
 }

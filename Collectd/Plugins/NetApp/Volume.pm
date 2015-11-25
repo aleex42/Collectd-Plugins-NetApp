@@ -196,80 +196,87 @@ sub cdot_qos_policy {
 
     my %policy_volume = ();
     my $workloads = $output->child_get("attributes-list");
-    my @result = $workloads->children_get();
+    
+    if($workloads){    
 
-    foreach my $workload (@result){
-
-        my $policy = $workload->child_get_string("policy-group");
-
-        if($policy =~ m/^qos_/){
-            my $workload_uuid = $workload->child_get_string("workload-uuid");
-            push @{ $policy_volume{$policy} }, $workload_uuid;
-        }
-    }
-
-    my $instance_api = new NaElement('perf-object-get-instances');
-    my $xi = new NaElement('counters');
-    $instance_api->child_add($xi);
-    $xi->child_add_string('counter','write_ops');
-    $xi->child_add_string('counter','read_ops');
-    my $xi1 = new NaElement('instance-uuids');
-    $instance_api->child_add($xi1);
-
-    for my $workload_name ( keys %policy_volume ){
-        foreach my $workload_uuid (@{ $policy_volume{$workload_name} }){
-            $xi1->child_add_string('instance-uuid',$workload_uuid);
-        }
-    }
-
-    $instance_api->child_add_string('objectname','workload');
-
-    my $xo;
-    eval {
-        $xo = connect_filer($hostname)->invoke_elem($instance_api);
-    };
-    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_qos_policy: $@") if $@;
-
-    my $instances = $xo->child_get("instances");
-    if($instances){
-
-        my @instance_result = $instances->children_get();
-
-        my %vol_values;
-
-        foreach my $instance (@instance_result){
-
-            my $volume_id = $instance->child_get_string("uuid");
-            my $counters = $instance->child_get("counters");
-            if($counters){
-                my @counters = $counters->children_get();
-
-                my %values = (read_ops => undef, write_ops => undef);
-
-                foreach my $counter (@counters) {
-                    my $key = $counter->child_get_string("name");
-                    if (exists $values{$key}) {
-                        $values{$key} = $counter->child_get_string("value");
-                    }
-                }
-                $vol_values{$volume_id} = [ $values{read_ops}, $values{write_ops} ];
+        my @result = $workloads->children_get();
+    
+        foreach my $workload (@result){
+    
+            my $policy = $workload->child_get_string("policy-group");
+    
+            if($policy =~ m/^qos_/){
+                my $workload_uuid = $workload->child_get_string("workload-uuid");
+                push @{ $policy_volume{$policy} }, $workload_uuid;
             }
         }
-
+    
+        my $instance_api = new NaElement('perf-object-get-instances');
+        my $xi = new NaElement('counters');
+        $instance_api->child_add($xi);
+        $xi->child_add_string('counter','write_ops');
+        $xi->child_add_string('counter','read_ops');
+        my $xi1 = new NaElement('instance-uuids');
+        $instance_api->child_add($xi1);
+    
         for my $workload_name ( keys %policy_volume ){
-
-            my ($read_ops, $write_ops);
-
             foreach my $workload_uuid (@{ $policy_volume{$workload_name} }){
-                $read_ops += $vol_values{$workload_uuid}->[0];
-                $write_ops += $vol_values{$workload_uuid}->[1];
+                $xi1->child_add_string('instance-uuid',$workload_uuid);
             }
-
-            $workload_name =~ s/qos_//;
-            $qos_return{$workload_name} = [ $read_ops, $write_ops ];
         }
+    
+        $instance_api->child_add_string('objectname','workload');
+    
+        my $xo;
+        eval {
+            $xo = connect_filer($hostname)->invoke_elem($instance_api);
+        };
+        plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_qos_policy: $@") if $@;
+    
+        my $instances = $xo->child_get("instances");
+        if($instances){
+    
+            my @instance_result = $instances->children_get();
+    
+            my %vol_values;
+    
+            foreach my $instance (@instance_result){
+    
+                my $volume_id = $instance->child_get_string("uuid");
+                my $counters = $instance->child_get("counters");
+                if($counters){
+                    my @counters = $counters->children_get();
+    
+                    my %values = (read_ops => undef, write_ops => undef);
+    
+                    foreach my $counter (@counters) {
+                        my $key = $counter->child_get_string("name");
+                        if (exists $values{$key}) {
+                            $values{$key} = $counter->child_get_string("value");
+                        }
+                    }
+                    $vol_values{$volume_id} = [ $values{read_ops}, $values{write_ops} ];
+                }
+            }
+    
+            for my $workload_name ( keys %policy_volume ){
+    
+                my ($read_ops, $write_ops);
+    
+                foreach my $workload_uuid (@{ $policy_volume{$workload_name} }){
+                    $read_ops += $vol_values{$workload_uuid}->[0];
+                    $write_ops += $vol_values{$workload_uuid}->[1];
+                }
+    
+                $workload_name =~ s/qos_//;
+                $qos_return{$workload_name} = [ $read_ops, $write_ops ];
+            }
+        }
+        return \%qos_return; 
+    } else {
+        plugin_log("DEBUG_LOG", "*DEBUG* no workloads for $hostname");
+        return undef;
     }
-    return \%qos_return;
 }
 
 sub cdot_vol_df {

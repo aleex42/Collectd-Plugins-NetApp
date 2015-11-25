@@ -38,48 +38,53 @@ sub smode_aggr_df {
     my $output = connect_filer($hostname)->invoke("volume-list-info");
 
     my $vols = $output->child_get("volumes");
-    my @result = $vols->children_get();
+    if($vols){
 
-    foreach my $vol (@result){
-
-        my $aggr = $vol->child_get_string("containing-aggregate");
-        my $used = $vol->child_get_string("size-total");
-
-        if($aggrs{$aggr}){
-            $aggrs{$aggr} += $used;
-        } else {
-            $aggrs{$aggr} = $used;
-        }
-    }
-
-    my $in = NaElement->new("aggr-space-list-info");
+        my @result = $vols->children_get();
     
-    my $out;
-    eval {
-        $out = connect_filer($hostname)->invoke_elem($in);
-    };
-    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_aggr_df: $@") if $@;
-
-    my $aggrs = $out->child_get("aggregates");
-
-    if($aggrs){
-
-        my @aggr_result = $aggrs->children_get();
-
-        foreach my $aggr (@aggr_result){
-
-            my $aggr_name = $aggr->child_get_string("aggregate-name");
-            my $aggr_used = $aggr->child_get_string("size-volume-used");
-            my $aggr_total = $aggr->child_get_string("size-nominal");
-
-            my $aggr_free = $aggr_total - $aggr_used;
-
-            $df_return{$aggr_name} = [ $aggr_used, $aggr_free, $aggrs{$aggr_name} ];
-
+        foreach my $vol (@result){
+    
+            my $aggr = $vol->child_get_string("containing-aggregate");
+            my $used = $vol->child_get_string("size-total");
+    
+            if($aggrs{$aggr}){
+                $aggrs{$aggr} += $used;
+            } else {
+                $aggrs{$aggr} = $used;
+            }
         }
-
-        return \%df_return;
-
+    
+        my $in = NaElement->new("aggr-space-list-info");
+        
+        my $out;
+        eval {
+            $out = connect_filer($hostname)->invoke_elem($in);
+        };
+        plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_aggr_df: $@") if $@;
+    
+        my $aggrs = $out->child_get("aggregates");
+    
+        if($aggrs){
+    
+            my @aggr_result = $aggrs->children_get();
+    
+            foreach my $aggr (@aggr_result){
+    
+                my $aggr_name = $aggr->child_get_string("aggregate-name");
+                my $aggr_used = $aggr->child_get_string("size-volume-used");
+                my $aggr_total = $aggr->child_get_string("size-nominal");
+    
+                my $aggr_free = $aggr_total - $aggr_used;
+    
+                $df_return{$aggr_name} = [ $aggr_used, $aggr_free, $aggrs{$aggr_name} ];
+    
+            }
+    
+            return \%df_return;
+    
+        } else {
+            return undef;
+        }
     } else {
         return undef;
     }

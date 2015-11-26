@@ -105,38 +105,58 @@ sub cdot_disk {
     $xi7->child_add($xi8);
     $xi7->child_add($xi9);
     $xi8->child_add_string('aggregate-name','<aggregate-name>');
+    my $xi10 = new NaElement('disk-shared-info');
+    $xi7->child_add($xi10);
 
     my $disk_output;
     eval {
         $disk_output = connect_filer($hostname)->invoke_elem($api);
     };
-    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_disk: $@") if $@;
 
     my $disks = $disk_output->child_get("attributes-list");
-   
+
     my %max_percent = ();
     my %disk_list = ();
- 
+
     if($disks){
 
         my @disk_result = $disks->children_get();
-    
+
         foreach my $disk (@disk_result){
-    
+
             my $raid_info = $disk->child_get("disk-raid-info");
             my $disk_uuid = $raid_info->child_get_int("disk-uid");
-    
+
+            my $shared_info = $raid_info->child_get("disk-shared-info");
+
+            if($shared_info){
+
+                my $shared_aggrs = $shared_info->child_get("aggregate-list");
+                if($shared_aggrs){
+
+                    my @aggrs = $shared_aggrs->children_get();
+
+                    foreach(@aggrs){
+                        my $aggr_name = $_->child_get_string("aggregate-name");
+                        if($aggr_name){
+                            push (@{$disk_list{$aggr_name}}, $disk_uuid);
+                        }
+                    }
+                }
+            }
+
             if($raid_info->child_get("disk-aggregate-info")){
-    
+
                 my $aggr_info = $raid_info->child_get("disk-aggregate-info");
                 my $aggr_name = $aggr_info->child_get_int("aggregate-name");
-    
-                push (@{$disk_list{$aggr_name}}, $disk_uuid);
-    
+
+                if($aggr_name){
+                    push (@{$disk_list{$aggr_name}}, $disk_uuid);
+                }
             }
         }
     }
-
+                                                                                                                          
     my $perf_api = new NaElement('perf-object-get-instances');
     my $perf_counters = new NaElement('counters');
     $perf_api->child_add($perf_counters);

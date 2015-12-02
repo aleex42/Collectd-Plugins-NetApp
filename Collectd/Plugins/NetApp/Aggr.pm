@@ -35,56 +35,35 @@ sub smode_aggr_df {
     my %df_return;
     my %aggrs;
 
-    my $output = connect_filer($hostname)->invoke("volume-list-info");
+    my $in = NaElement->new("aggr-space-list-info");
+    
+    my $out;
+    eval {
+        $out = connect_filer($hostname)->invoke_elem($in);
+    };
+    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_aggr_df: $@") if $@;
+    
+    my $aggrs = $out->child_get("aggregates");
+    
+    if($aggrs){
+    
+        my @aggr_result = $aggrs->children_get();
+    
+        foreach my $aggr (@aggr_result){
+   
+            my $aggr_name = $aggr->child_get_string("aggregate-name");
+            my $aggr_used = $aggr->child_get_string("size-volume-used");
+            my $aggr_total = $aggr->child_get_string("size-nominal");
+            my $aggr_allocated = $aggr->child_get_string("size-used");
 
-    my $vols = $output->child_get("volumes");
-    if($vols){
-
-        my @result = $vols->children_get();
+            my $allocated = $aggr_allocated - $aggr_used;
+            my $aggr_free = $aggr_total - $aggr_used - $allocated;
+ 
+            $df_return{$aggr_name} = [ $aggr_used, $aggr_free, $allocated ];
     
-        foreach my $vol (@result){
-    
-            my $aggr = $vol->child_get_string("containing-aggregate");
-            my $used = $vol->child_get_string("size-total");
-    
-            if($aggrs{$aggr}){
-                $aggrs{$aggr} += $used;
-            } else {
-                $aggrs{$aggr} = $used;
-            }
         }
     
-        my $in = NaElement->new("aggr-space-list-info");
-        
-        my $out;
-        eval {
-            $out = connect_filer($hostname)->invoke_elem($in);
-        };
-        plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_aggr_df: $@") if $@;
-    
-        my $aggrs = $out->child_get("aggregates");
-    
-        if($aggrs){
-    
-            my @aggr_result = $aggrs->children_get();
-    
-            foreach my $aggr (@aggr_result){
-    
-                my $aggr_name = $aggr->child_get_string("aggregate-name");
-                my $aggr_used = $aggr->child_get_string("size-volume-used");
-                my $aggr_total = $aggr->child_get_string("size-nominal");
-    
-                my $aggr_free = $aggr_total - $aggr_used;
-    
-                $df_return{$aggr_name} = [ $aggr_used, $aggr_free, $aggrs{$aggr_name} ];
-    
-            }
-    
-            return \%df_return;
-    
-        } else {
-            return undef;
-        }
+        return \%df_return;
     } else {
         return undef;
     }
@@ -436,10 +415,10 @@ sub aggr_module {
                             });
 
                     plugin_dispatch_values({
-                            plugin => 'df_aggr_reserved',
+                            plugin => 'df_aggr',
                             plugin_instance => $aggr,
                             type => 'df_complex',
-                            type_instance => 'used',
+                            type_instance => 'allocated',
                             values => [$aggr_value[2]],
                             interval => '30',
                             host => $hostname,

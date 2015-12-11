@@ -153,7 +153,6 @@ sub cpu_module {
             };
             plugin_log("DEBUG_LOG", "*DEBUG* cdot_cpu: $@") if $@;
 
-
             foreach my $node (keys %$cpu_result){
 
                 my $node_value_ref = $cpu_result->{$node};
@@ -179,7 +178,6 @@ sub cpu_module {
                 $cpu_result = smode_cpu($hostname);
             };
             plugin_log("DEBUG_LOG", "*DEBUG* smode_cpu: $@") if $@;
-
 
             if($cpu_result){
 

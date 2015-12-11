@@ -32,7 +32,7 @@ sub connect_filer {
 
     my $mode = $Config{ $hostname . '.Mode'};
 
-    my $s = NaServer->new( $hostname, 1, 21 );
+    my $s = NaServer->new( $hostname, 1, 3 );
     $s->set_style('LOGIN');
     $s->set_timeout(10);
     $s->set_admin_user( $Config{ $hostname . '.Username'}, $Config{ $hostname . '.Password'});

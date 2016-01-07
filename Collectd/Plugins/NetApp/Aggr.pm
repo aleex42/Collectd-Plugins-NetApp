@@ -32,6 +32,7 @@ use Config::Simple;
 sub smode_aggr_df {
 
     my $hostname = shift;
+
     my %df_return;
     my %aggrs;
 
@@ -72,6 +73,7 @@ sub smode_aggr_df {
 sub smode_aggr_iops {
 
     my $hostname = shift;
+
     my %iops_return;
 
     my $in = NaElement->new("perf-object-get-instances");
@@ -277,6 +279,7 @@ sub cdot_aggr_df_reserved {
 sub aggr_module {
 
     my ($hostname, $filer_os) = @_;
+    my $starttime = time();
 
     given ($filer_os){
 
@@ -304,6 +307,7 @@ sub aggr_module {
                             values => [$aggr_value[0]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
 
                     plugin_dispatch_values({
@@ -314,6 +318,7 @@ sub aggr_module {
                             values => [$aggr_value[1]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
 
                     plugin_dispatch_values({
@@ -323,6 +328,7 @@ sub aggr_module {
                             values => [$aggr_value[2], $aggr_value[3]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }
             }
@@ -348,6 +354,7 @@ sub aggr_module {
                             values => [$aggr_value],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }
             }
@@ -376,6 +383,7 @@ sub aggr_module {
                             values => [$aggr_value[0], $aggr_value[1]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }
             }
@@ -402,6 +410,7 @@ sub aggr_module {
                             values => [$aggr_value[0]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
 
                     plugin_dispatch_values({
@@ -412,6 +421,7 @@ sub aggr_module {
                             values => [$aggr_value[1]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
 
                     plugin_dispatch_values({
@@ -422,6 +432,7 @@ sub aggr_module {
                             values => [$aggr_value[2]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
 
                 }

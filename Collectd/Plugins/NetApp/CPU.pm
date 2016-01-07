@@ -33,6 +33,7 @@ sub cdot_cpu {
 
     my $hostname = shift;
     my %cpu_return;
+    my $starttime = time();
 
     my $output;
     eval {
@@ -90,7 +91,16 @@ sub cdot_cpu {
                         my $busy = $values{processor_busy};
                         my $time = $values{processor_elapsed_time};
 
-                        $cpu_return{$node_name} = [$time, $busy];
+                        plugin_dispatch_values({
+                            plugin => 'cpu',
+                            type => 'netapp_cpu',
+                            type_instance => $node_name,
+                            values => [$time, $busy],
+                            interval => '30',
+                            host => $hostname,
+                            time => $starttime
+                        });
+
                     }
                 }
             }
@@ -102,7 +112,8 @@ sub cdot_cpu {
 sub smode_cpu {
 
     my $hostname = shift;
-
+    my $starttime = time();
+	
     my $api = new NaElement('perf-object-get-instances');
 
     my $xi = new NaElement('counters');
@@ -126,15 +137,20 @@ sub smode_cpu {
             my $counter_data = $counters->child_get("counter-data");
             if($counter_data){
                 my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
-                return $rounded_busy;
-            } else {
-                return undef;
+
+                plugin_dispatch_values({
+                    plugin => 'cpu',
+                    plugin_instance => 'total',
+                    type => 'cpu',
+                    type_instance => 'cpu_busy',
+                    values => [$rounded_busy],
+                    interval => '30',
+                    host => $hostname,
+                    time => $starttime,
+                    });
+
             }
-        } else {
-            return undef;
         }
-    } else {
-        return undef;
     }
 }
 
@@ -153,21 +169,6 @@ sub cpu_module {
             };
             plugin_log("DEBUG_LOG", "*DEBUG* cdot_cpu: $@") if $@;
 
-            foreach my $node (keys %$cpu_result){
-
-                my $node_value_ref = $cpu_result->{$node};
-                my @node_value = @{ $node_value_ref };
-
-                plugin_dispatch_values({
-                        plugin => 'cpu',
-                        #type => 'cpu',
-                        type => 'netapp_cpu',
-                        type_instance => $node,
-                        values => [$node_value[0], $node_value[1]],
-                        interval => '30',
-                        host => $hostname,
-                        });
-            }            
         }
 
         default {
@@ -179,18 +180,6 @@ sub cpu_module {
             };
             plugin_log("DEBUG_LOG", "*DEBUG* smode_cpu: $@") if $@;
 
-            if($cpu_result){
-
-                plugin_dispatch_values({
-                    plugin => 'cpu',
-                    plugin_instance => 'total',
-                    type => 'cpu',
-                    type_instance => 'cpu_busy',
-                    values => [$cpu_result],
-                    interval => '30',
-                    host => $hostname,
-                    });
-            }
         }
     }
 
@@ -198,4 +187,5 @@ sub cpu_module {
 }
 
 1;
+
 

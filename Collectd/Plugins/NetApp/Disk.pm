@@ -235,6 +235,7 @@ sub cdot_disk {
 sub disk_module {
    
     my ($hostname, $filer_os) = @_;
+    my $starttime = time();
 
     given ($filer_os){
 
@@ -260,6 +261,7 @@ sub disk_module {
                             values => [@aggr_value],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }
             }
@@ -287,6 +289,7 @@ sub disk_module {
                             values => [@aggr_value],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }
             }

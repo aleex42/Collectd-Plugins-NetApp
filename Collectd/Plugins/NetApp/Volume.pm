@@ -375,6 +375,8 @@ sub smode_vol_df {
 sub vol_df_thread_func {
 
     my ($hostname, $volume) = @_;
+    my $starttime = time();
+
     my $vol_name = $volume->child_get_string("name");
 
     $SIG{'KILL'} = sub { plugin_log("LOG_DEBUG", "*TIMEOUT* volume_module $hostname/$vol_name GOT KILLED") };
@@ -433,6 +435,7 @@ sub vol_df_thread_func {
                 values => [$vol_free],
                 interval => '30',
                 host => $hostname,
+                time => $starttime,
                 });
         
         plugin_dispatch_values({
@@ -443,6 +446,7 @@ sub vol_df_thread_func {
                 values => [$vol_used],
                 interval => '30',
                 host => $hostname,
+                time => $starttime,
                 });
         
         plugin_dispatch_values({
@@ -453,6 +457,7 @@ sub vol_df_thread_func {
                 values => [$snap_reserve_free],
                 interval => '30',
                 host => $hostname,
+                time => $starttime,
                 });
         
         plugin_dispatch_values({
@@ -463,6 +468,7 @@ sub vol_df_thread_func {
                 values => [$snap_reserve_used],
                 interval => '30',
                 host => $hostname,
+                time => $starttime,
                 });
         
         plugin_dispatch_values({
@@ -473,6 +479,7 @@ sub vol_df_thread_func {
                 values => [$snap_norm_used],
                 interval => '30',
                 host => $hostname,
+                time => $starttime,
                 });
      }
 }
@@ -480,6 +487,7 @@ sub vol_df_thread_func {
 sub volume_module {
 
     my ($hostname, $filer_os) = @_;
+    my $starttime = time();
 
     given ($filer_os){
 
@@ -506,6 +514,7 @@ sub volume_module {
                             values => [$vol_value[0]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
 
                     plugin_dispatch_values({
@@ -516,6 +525,7 @@ sub volume_module {
                             values => [$vol_value[1]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }                   
             }
@@ -540,6 +550,7 @@ sub volume_module {
                             values => [$perf_vol_value[2], $perf_vol_value[3], $perf_vol_value[0], $perf_vol_value[1]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
 
                     plugin_dispatch_values({
@@ -549,6 +560,7 @@ sub volume_module {
                             values => [$perf_vol_value[4], $perf_vol_value[5]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
 
                     plugin_dispatch_values({
@@ -558,6 +570,7 @@ sub volume_module {
                             values => [$perf_vol_value[0], $perf_vol_value[1]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }
             }
@@ -582,6 +595,7 @@ sub volume_module {
                             values => [$qos_value[0], $qos_value[1]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }
             }
@@ -610,6 +624,7 @@ sub volume_module {
                             values => [$perf_vol_value[0], $perf_vol_value[1], $perf_vol_value[4], $perf_vol_value[5]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
 
                     plugin_dispatch_values({
@@ -619,6 +634,7 @@ sub volume_module {
                             values => [$perf_vol_value[2], $perf_vol_value[3]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
 
                     plugin_dispatch_values({
@@ -628,6 +644,7 @@ sub volume_module {
                             values => [$perf_vol_value[4], $perf_vol_value[5]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }
 

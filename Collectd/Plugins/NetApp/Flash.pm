@@ -131,6 +131,7 @@ sub cdot_flash {
 sub flash_module {
    
     my ($hostname, $filer_os) = @_;
+    my $starttime = time();
 
     given ($filer_os){
 
@@ -156,6 +157,7 @@ sub flash_module {
                             values => [@aggr_value],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }
             }

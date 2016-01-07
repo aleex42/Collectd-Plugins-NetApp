@@ -21,6 +21,7 @@ use Collectd::Plugins::NetApp::Aggr qw(aggr_module);
 use Collectd::Plugins::NetApp::NIC qw(nic_module);
 use Collectd::Plugins::NetApp::Disk qw(disk_module);
 use Collectd::Plugins::NetApp::Flash qw(flash_module);
+use Collectd::Plugins::NetApp::IOPS qw(iops_module);
 
 use feature qw/switch/;
 
@@ -100,6 +101,15 @@ sub module_thread_func {
                 flash_module($hostname, $filer_os);
             };
             plugin_log("LOG_DEBUG", "*DEBUG* flash_module: $@") if $@;
+        }
+
+        when("IOPS"){
+            if($filer_os eq "cDOT"){
+                eval {
+                    iops_module($hostname);
+                };
+                plugin_log("LOG_DEBUG", "*DEBUG* iops_module: $@") if $@;
+            }
         }
 
         default {

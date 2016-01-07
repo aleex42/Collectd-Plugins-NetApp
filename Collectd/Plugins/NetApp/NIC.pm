@@ -244,6 +244,7 @@ sub smode_nic {
 sub nic_module {
 
     my ($hostname, $filer_os) = @_;
+    my $starttime = time();
 
     given ($filer_os){
 
@@ -269,6 +270,7 @@ sub nic_module {
                             values => [$lif_value[0], $lif_value[1]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }
             }
@@ -293,6 +295,7 @@ sub nic_module {
                             values => [$port_value[0], $port_value[1]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }
             }
@@ -321,6 +324,7 @@ sub nic_module {
                             values => [$nic_value[0], $nic_value[1]],
                             interval => '30',
                             host => $hostname,
+                            time => $starttime,
                             });
                 }
             }

@@ -121,7 +121,7 @@ sub module_thread_func {
 sub my_get {
 
     my @hosts = keys %{ $cfg->{_DATA}};
-    my $timeout = 28;
+    my $timeout = 20;
     my @threads = ();
 
     plugin_log("LOG_DEBUG", "*DEBUG* STARTED");
@@ -145,7 +145,7 @@ sub my_get {
 
     sleep $timeout-(time()-$start);
 
-    plugin_log("LOG_DEBUG", "*DEBUG* JOINABLE ". threads->list(threads::joinable));
+    plugin_log("LOG_DEBUG", "*DEBUG* DETACHING ". threads->list(threads::joinable));
     foreach (threads->list(threads::joinable)) {
         $_->join();
     }

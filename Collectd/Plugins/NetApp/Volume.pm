@@ -575,32 +575,6 @@ sub volume_module {
                 }
             }
 
-<<<<<<< HEAD
-#            my $qos_result;
-#            eval {
-#                $qos_result = cdot_qos_policy($hostname);
-#            };
-#            plugin_log("DEBUG_LOG", "*DEBUG* cdot_qos_policy: $@") if $@;
-#
-#            if($qos_result){
-#
-#                foreach my $qos (keys %$qos_result){
-#
-#                    my $qos_value_ref = $qos_result->{$qos};
-#                    my @qos_value = @{ $qos_value_ref };
-#
-#                    plugin_dispatch_values({
-#                            plugin => 'iops_policy',
-#                            type => 'disk_ops',
-#                            type_instance => $qos,
-#                            values => [$qos_value[0], $qos_value[1]],
-#                            interval => '30',
-#                            host => $hostname,
-#                            });
-#                }
-#            }
-#
-=======
             my $qos_result;
             eval {
                 $qos_result = cdot_qos_policy($hostname);
@@ -625,8 +599,6 @@ sub volume_module {
                             });
                 }
             }
-
->>>>>>> 29ba24b2bd5c8cfdfb8319eb10cba578b7dd789a
         }
 
         default {

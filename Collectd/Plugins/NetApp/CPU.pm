@@ -98,7 +98,7 @@ sub cdot_cpu {
                             values => [$time, $busy],
                             interval => '30',
                             host => $hostname,
-                            time => $starttime
+                            time => $starttime,
                         });
 
                     }

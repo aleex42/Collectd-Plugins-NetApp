@@ -214,8 +214,8 @@ sub iops_module {
 
     my @qos_groups;
 
-    my $iterator = NaElement->new("perf-object-instance-list-info-iter");
-    my $tag_elem = NaElement->new("tag");
+    $iterator = NaElement->new("perf-object-instance-list-info-iter");
+    $tag_elem = NaElement->new("tag");
     $iterator->child_add($tag_elem);
     $iterator->child_add_string("objectname","policy_group");
     

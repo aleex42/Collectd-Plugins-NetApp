@@ -22,8 +22,13 @@ use Collectd::Plugins::NetApp::NIC qw(nic_module);
 use Collectd::Plugins::NetApp::Disk qw(disk_module);
 use Collectd::Plugins::NetApp::Flash qw(flash_module);
 use Collectd::Plugins::NetApp::IOPS qw(iops_module);
+use Collectd::Plugins::NetApp::NACommon qw(connect_filer);
 
 use feature qw/switch/;
+
+use lib "/usr/lib/netapp-manageability-sdk/lib/perl/NetApp";
+use NaServer;
+use NaElement;
 
 use Data::Dumper;
 
@@ -54,61 +59,39 @@ sub my_init {
 
 sub module_thread_func {
 
-    my ($module, $hostname, $filer_os) = @_;
+    my ($module, $hostname, $filer_os, $volume) = @_;
 
     $SIG{'KILL'} = sub { plugin_log("LOG_INFO", "*TIMEOUT* module $hostname/$module GOT KILLED") };
 
     given($module){
 
         when("CPU"){
-            eval {
                 cpu_module($hostname, $filer_os);
-            };
-            plugin_log("LOG_DEBUG", "*DEBUG* cpu_module: $@") if $@;
         }
 
         when("Aggr"){
-            eval {
                 aggr_module($hostname, $filer_os);
-            };
-            plugin_log("LOG_DEBUG", "*DEBUG* aggr_module: $@") if $@;
-
         }
 
-        when("Volume"){
-            eval {
-                volume_module($hostname, $filer_os);
-            };
-            plugin_log("LOG_DEBUG", "*DEBUG* volume_module: $@") if $@;
-        }
+	when("Volume"){
+		volume_module($hostname, $filer_os, $volume);
+	}
 
         when("NIC"){
-            eval {
-                nic_module($hostname, $filer_os);
-            };
-            plugin_log("LOG_DEBUG", "*DEBUG* nic_module: $@") if $@;
+            	nic_module($hostname, $filer_os);
         }
 
         when("Disk"){
-            eval {
-                disk_module($hostname, $filer_os);
-            };
-            plugin_log("LOG_DEBUG", "*DEBUG* disk_module: $@") if $@;
+        	disk_module($hostname, $filer_os);
         }
 
         when("Flash"){
-            eval {
                 flash_module($hostname, $filer_os);
-            };
-            plugin_log("LOG_DEBUG", "*DEBUG* flash_module: $@") if $@;
         }
 
         when("IOPS"){
             if($filer_os eq "cDOT"){
-                eval {
                     iops_module($hostname);
-                };
-                plugin_log("LOG_DEBUG", "*DEBUG* iops_module: $@") if $@;
             }
         }
 
@@ -137,8 +120,9 @@ sub my_get {
             my @modules_array = @{ $modules };
 
             foreach my $module (@modules_array){
-                push(@threads, threads->create (\&module_thread_func, $module, $hostname, $filer_os));
-                plugin_log("LOG_DEBUG", "*DEBUG* new thread $hostname/$module");
+
+	    		push(@threads, threads->create (\&module_thread_func, $module, $hostname, $filer_os));
+		        plugin_log("LOG_DEBUG", "*DEBUG* new thread $hostname/$module");
             }
         }
     }

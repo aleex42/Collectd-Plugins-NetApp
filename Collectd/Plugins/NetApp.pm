@@ -23,6 +23,7 @@ use Collectd::Plugins::NetApp::Disk qw(disk_module);
 use Collectd::Plugins::NetApp::Flash qw(flash_module);
 use Collectd::Plugins::NetApp::IOPS qw(iops_module);
 use Collectd::Plugins::NetApp::NACommon qw(connect_filer);
+use Collectd::Plugins::NetApp::FCP qw(fcp_module);
 
 use feature qw/switch/;
 
@@ -73,9 +74,9 @@ sub module_thread_func {
                 aggr_module($hostname, $filer_os);
         }
 
-	when("Volume"){
-		volume_module($hostname, $filer_os, $volume);
-	}
+    	when("Volume"){
+        		volume_module($hostname, $filer_os, $volume);
+    	}
 
         when("NIC"){
             	nic_module($hostname, $filer_os);
@@ -88,7 +89,9 @@ sub module_thread_func {
         when("Flash"){
                 flash_module($hostname, $filer_os);
         }
-
+        when("FCP"){
+                fcp_module($hostname, $filer_os);
+        }
         when("IOPS"){
             if($filer_os eq "cDOT"){
                     iops_module($hostname);

@@ -64,60 +64,64 @@ sub cdot_flash {
         plugin_log("DEBUG_LOG", "*DEBUG* connect fail name_output: $@") if $@;
     
         my $name_list = $name_output->child_get("attributes-list");
-        my @name_result = $name_list->children_get();
-    
-        foreach my $name_id (@name_result){
-            my $aggr_name = $name_id->child_get_string("name");
-            my $aggr_uuid = $name_id->child_get_string("uuid");
-            $aggr_name_mapping{$aggr_name} = $aggr_uuid;
-        }
-    
-        my $perf_api = new NaElement('perf-object-get-instances');
-        my $perf_counters = new NaElement('counters');
-        $perf_api->child_add($perf_counters);
-        $perf_counters->child_add_string('counter','user_read_blocks');
-        $perf_counters->child_add_string('counter','user_read_blocks_ssd');
-        $perf_counters->child_add_string('counter','user_write_blocks');
-        $perf_counters->child_add_string('counter','user_write_blocks_ssd');
-    
-        my $perf_uuids = new NaElement('instance-uuids');
-        $perf_api->child_add($perf_uuids);
-    
-        foreach (@hybrid_aggrs){
-            my $aggregate_id = $aggr_name_mapping{$_};
-            $perf_uuids->child_add_string('instance-uuid',$aggregate_id);
-        }
-    
-        $perf_api->child_add_string('objectname','aggregate');
-    
-        my $perf_output;
-        eval {
-            $perf_output = connect_filer($hostname)->invoke_elem($perf_api);
-        };
-        plugin_log("DEBUG_LOG", "*DEBUG* connect fail perf_output: $@") if $@;
-    
-        my $instances = $perf_output->child_get("instances");
-        if($instances){
-    
-            my @instance_result = $instances->children_get();
-    
-            foreach my $instance (@instance_result){
-    
-                my $counters = $instance->child_get("counters");
-                if($counters){
-                    my @result = $counters->children_get();
-    
-                    my %values = (user_read_blocks => undef, user_read_blocks_ssd => undef, user_write_blocks => undef, user_write_blocks_ssd => undef);
-    
-                    foreach my $counter (@result){
-                        my $key = $counter->child_get_string("name");
-                        if(exists $values{$key}){
-                            $values{$key} = $counter->child_get_string("value");
+
+        if($name_list){
+
+            my @name_result = $name_list->children_get();
+        
+            foreach my $name_id (@name_result){
+                my $aggr_name = $name_id->child_get_string("name");
+                my $aggr_uuid = $name_id->child_get_string("uuid");
+                $aggr_name_mapping{$aggr_name} = $aggr_uuid;
+            }
+        
+            my $perf_api = new NaElement('perf-object-get-instances');
+            my $perf_counters = new NaElement('counters');
+            $perf_api->child_add($perf_counters);
+            $perf_counters->child_add_string('counter','user_read_blocks');
+            $perf_counters->child_add_string('counter','user_read_blocks_ssd');
+            $perf_counters->child_add_string('counter','user_write_blocks');
+            $perf_counters->child_add_string('counter','user_write_blocks_ssd');
+        
+            my $perf_uuids = new NaElement('instance-uuids');
+            $perf_api->child_add($perf_uuids);
+        
+            foreach (@hybrid_aggrs){
+                my $aggregate_id = $aggr_name_mapping{$_};
+                $perf_uuids->child_add_string('instance-uuid',$aggregate_id);
+            }
+        
+            $perf_api->child_add_string('objectname','aggregate');
+        
+            my $perf_output;
+            eval {
+                $perf_output = connect_filer($hostname)->invoke_elem($perf_api);
+            };
+            plugin_log("DEBUG_LOG", "*DEBUG* connect fail perf_output: $@") if $@;
+        
+            my $instances = $perf_output->child_get("instances");
+            if($instances){
+        
+                my @instance_result = $instances->children_get();
+        
+                foreach my $instance (@instance_result){
+        
+                    my $counters = $instance->child_get("counters");
+                    if($counters){
+                        my @result = $counters->children_get();
+        
+                        my %values = (user_read_blocks => undef, user_read_blocks_ssd => undef, user_write_blocks => undef, user_write_blocks_ssd => undef);
+        
+                        foreach my $counter (@result){
+                            my $key = $counter->child_get_string("name");
+                            if(exists $values{$key}){
+                                $values{$key} = $counter->child_get_string("value");
+                            }
                         }
+        
+                        my $name = $instance->child_get_string("name");
+                        $aggr_transfers{$name} = [ $values{user_read_blocks}, $values{user_read_blocks_ssd}, $values{user_write_blocks}, $values{user_write_blocks_ssd} ];
                     }
-    
-                    my $name = $instance->child_get_string("name");
-                    $aggr_transfers{$name} = [ $values{user_read_blocks}, $values{user_read_blocks_ssd}, $values{user_write_blocks}, $values{user_write_blocks_ssd} ];
                 }
             }
         }

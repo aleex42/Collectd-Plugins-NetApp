@@ -12,6 +12,7 @@ package Collectd::Plugins::NetApp;
 
 use strict;
 use warnings;
+no warnings "experimental";
 
 use threads;
 
@@ -24,9 +25,6 @@ use Collectd::Plugins::NetApp::Flash qw(flash_module);
 use Collectd::Plugins::NetApp::IOPS qw(iops_module);
 use Collectd::Plugins::NetApp::NACommon qw(connect_filer);
 use Collectd::Plugins::NetApp::FCP qw(fcp_module);
-
-no warnings 'experimental::given';
-no warnings 'experimental::when';
 
 use feature qw/switch/;
 

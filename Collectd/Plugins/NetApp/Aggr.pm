@@ -15,11 +15,9 @@ our @EXPORT = qw(aggr_module);
 
 use strict;
 use warnings;
+no warnings "experimental";
 
 use feature qw(switch);
-
-no warnings 'experimental::given';
-no warnings 'experimental::when';
 
 use Collectd qw( :all );
 use Collectd::Plugins::NetApp::NACommon qw(connect_filer);

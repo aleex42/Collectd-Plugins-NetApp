@@ -15,9 +15,7 @@ our @EXPORT = qw(volume_module);
 
 use strict;
 use warnings;
-
-no warnings 'experimental::given';
-no warnings 'experimental::when';
+no warnings "experimental";
 
 use feature qw(switch);
 

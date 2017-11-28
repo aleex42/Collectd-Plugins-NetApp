@@ -16,6 +16,9 @@ our @EXPORT = qw(flash_module);
 use strict;
 use warnings;
 
+no warnings 'experimental::given';
+no warnings 'experimental::when';
+
 use feature qw(switch);
 
 use Collectd qw( :all );

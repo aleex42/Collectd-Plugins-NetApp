@@ -15,6 +15,9 @@ use Data::Dumper;
 use base 'Exporter';
 our @EXPORT = qw(cpu_module);
 
+no warnings 'experimental::given';
+no warnings 'experimental::when';
+
 use strict;
 use warnings;
 

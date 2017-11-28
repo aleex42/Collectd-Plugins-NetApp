@@ -18,6 +18,9 @@ use warnings;
 
 use feature qw(switch);
 
+no warnings 'experimental::given';
+no warnings 'experimental::when';
+
 use Collectd qw( :all );
 use Collectd::Plugins::NetApp::NACommon qw(connect_filer);
 

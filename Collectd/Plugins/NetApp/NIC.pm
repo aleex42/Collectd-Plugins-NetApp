@@ -13,6 +13,9 @@ package Collectd::Plugins::NetApp::NIC;
 use base 'Exporter';
 our @EXPORT = qw(nic_module);
 
+no warnings 'experimental::given';
+no warnings 'experimental::when';
+
 use strict;
 use warnings;
 

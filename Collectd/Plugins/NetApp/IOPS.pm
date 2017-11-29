@@ -149,12 +149,12 @@ sub iops_module {
     }
 
     my @protocols = ('nfsv3', 'nfsv4', 'cifs', 'iscsi', 'fcp');
-    
+
     foreach my $proto (@protocols){
-    
+
         my $in = NaElement->new("perf-object-get-instances"); # werte holen
-        $in->child_add_string("objectname","$proto:node");
-    
+            $in->child_add_string("objectname","$proto:node");
+
         my $xi1 = NaElement->new("instance-uuids");
         $in->child_add($xi1);
         foreach (keys %nodes){
@@ -163,40 +163,40 @@ sub iops_module {
         my $counters = NaElement->new("counters");
         $in->child_add($counters);
         $counters->child_add_string("counter","${proto}_ops");
-    
+
         my $xo = connect_filer($hostname)->invoke_elem($in);
-    
+
         my %node_sum;
-    
+
         my $instances = $xo->child_get("instances");
         if($instances){
-    
+
             my @instance_data = $instances->children_get("instance-data");
-    
+
             foreach my $node (@instance_data){
-    
+
                 my $node_name = $node->child_get_string("name");
-    
+
                 my $counters = $node->child_get("counters");
                 if($counters){
-    
+
                     my @counter_result = $counters->children_get();
-    
+
                     foreach my $counter (@counter_result){
-    
+
                         my $name = $counter->child_get_string("name");
                         my $value = $counter->child_get_string("value");
-   
+
                         plugin_dispatch_values({
-                            plugin => "iops_protocol",
-                            plugin_instance => $node_name,
-                            type => 'disk_ops_complex',
-                            type_instance => "${proto}_ops",
-                            values => [$value],
-                            interval => '30',
-                            host => $hostname,
-                        });
- 
+                                plugin => "iops_protocol",
+                                plugin_instance => $node_name,
+                                type => 'disk_ops_complex',
+                                type_instance => "${proto}_ops",
+                                values => [$value],
+                                interval => '30',
+                                host => $hostname,
+                                });
+
                         $node_sum{$proto} += $value;
                     }
                 }
@@ -209,7 +209,7 @@ sub iops_module {
                     values => [$node_sum{$proto}],
                     interval => '30',
                     host => $hostname,
-            });
+                    });
         }
     }
 
@@ -219,26 +219,26 @@ sub iops_module {
     $tag_elem = NaElement->new("tag");
     $iterator->child_add($tag_elem);
     $iterator->child_add_string("objectname","policy_group");
-    
+
     $next = "";
-    
+
     while(defined($next)){
         unless($next eq ""){
             $tag_elem->set_content($next);
         }
-    
+
         $iterator->child_add_string("max-records", 100);
         my $output = connect_filer($hostname)->invoke_elem($iterator);
-    
+
         my $heads = $output->child_get("attributes-list");
         my @result = $heads->children_get();
-    
+
         foreach my $pg (@result){
             push(@qos_groups, $pg->child_get_string("node-uuid"));
         }
         $next = $output->child_get_string("next-tag");
     }
-    
+
     my $in = NaElement->new("perf-object-get-instances"); 
     $in->child_add_string("objectname","policy_group");
     my $xi1 = NaElement->new("instance-uuids");
@@ -249,42 +249,55 @@ sub iops_module {
     my $counters = NaElement->new("counters");
     $in->child_add($counters);
     $counters->child_add_string("counter","total_ops");
+    $counters->child_add_string("counter","read_ops");
+    $counters->child_add_string("counter","write_ops");
 
     my $xo = connect_filer($hostname)->invoke_elem($in);
-    
+
     my $instances = $xo->child_get("instances");
     if($instances){
-    
+
         my @instance_data = $instances->children_get("instance-data");
-    
+
         foreach my $group (@instance_data){
-    
+
             my $policy_name = $group->child_get_string("name");
-    
+
             my $counters = $group->child_get("counters");
+
             if($counters){
-    
-                my @counter_result = $counters->children_get();
-    
-                foreach my $counter (@counter_result){
-    
-                    my $name = $counter->child_get_string("name");
-                    my $value = $counter->child_get_string("value");
-    
-                    plugin_dispatch_values({
+
+                my @counters = $counters->children_get();
+
+                my %values = (read_ops => undef, write_ops => undef, total_ops => undef);
+
+                foreach my $counter (@counters) {
+                    my $key = $counter->child_get_string("name");
+                    if (exists $values{$key}) {
+                        $values{$key} = $counter->child_get_string("value");
+                    }
+                }
+
+                plugin_dispatch_values({
                         plugin => 'iops_policy',
                         type => 'operations',
                         type_instance => $policy_name,
-                        values => [$value],
+                        values => [$values{total_ops}],
                         interval => '30',
                         host => $hostname,
                         });
 
-                }
+                plugin_dispatch_values({
+                        plugin => 'qos_policy',
+                        type => 'disk_ops',
+                        type_instance => $policy_name,
+                        values => [$values{read_ops}, $values{write_ops}],
+                        interval => '30',
+                        host => $hostname,
+                        });
             }
         }
     }
-
     return 1;
 }
 

@@ -18,6 +18,7 @@ use threads;
 
 use Collectd::Plugins::NetApp::CPU qw(cpu_module);
 use Collectd::Plugins::NetApp::Volume qw(volume_module);
+use Collectd::Plugins::NetApp::VolumeDF qw(volume_df_module);
 use Collectd::Plugins::NetApp::Aggr qw(aggr_module);
 use Collectd::Plugins::NetApp::NIC qw(nic_module);
 use Collectd::Plugins::NetApp::Disk qw(disk_module);
@@ -76,8 +77,12 @@ sub module_thread_func {
         }
 
     	when("Volume"){
-        		volume_module($hostname, $filer_os, $volume);
+        		volume_module($hostname, $filer_os);
     	}
+
+        when("VolumeDF"){
+                volume_df_module($hostname, $filer_os);
+        }        
 
         when("NIC"){
             	nic_module($hostname, $filer_os);
@@ -103,6 +108,7 @@ sub module_thread_func {
 # nothing
         }
     }
+    plugin_log("LOG_DEBUG", "*DEBUG* finished thread $hostname/$module");
 }
 
 sub my_get {
@@ -116,6 +122,8 @@ sub my_get {
 
     foreach my $hostname (@hosts)  {
 
+#         plugin_log("LOG_DEBUG", "*DEBUG* hostname $hostname");
+
         my $filer_os = $Config{ $hostname . '.Mode'};
         my $modules = $Config{ $hostname . '.Modules'};
 
@@ -124,6 +132,8 @@ sub my_get {
             my @modules_array = @{ $modules };
 
             foreach my $module (@modules_array){
+
+#                plugin_log("LOG_DEBUG", "*DEBUG* module: $module");
 
 	    		push(@threads, threads->create (\&module_thread_func, $module, $hostname, $filer_os));
 		        plugin_log("LOG_DEBUG", "*DEBUG* new thread $hostname/$module");

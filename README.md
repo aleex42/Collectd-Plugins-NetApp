@@ -19,8 +19,8 @@ I recommend a symlink from the current version to this folder. For example:
 
 For detailed documentation and examples have a look at my Mediawiki:
 
-* http://wiki.krogloth.de/wiki/NetApp_C-Mode/Capacity_Management
-* http://wiki.krogloth.de/wiki/NetApp_7-Mode/Capacity_Management
+* http://wiki.krogloth.de/index.php/NetApp_cDOT/Capacity_Management 
+* http://wiki.krogloth.de/index.php/NetApp_7-Mode/Capacity_Management
 
 -- 
 

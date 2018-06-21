@@ -23,6 +23,7 @@ use Collectd::Plugins::NetApp::Aggr qw(aggr_module);
 use Collectd::Plugins::NetApp::NIC qw(nic_module);
 use Collectd::Plugins::NetApp::Disk qw(disk_module);
 use Collectd::Plugins::NetApp::Flash qw(flash_module);
+use Collectd::Plugins::NetApp::FlashCache qw(flashcache_module);
 use Collectd::Plugins::NetApp::IOPS qw(iops_module);
 use Collectd::Plugins::NetApp::NACommon qw(connect_filer);
 use Collectd::Plugins::NetApp::FCP qw(fcp_module);
@@ -95,9 +96,15 @@ sub module_thread_func {
         when("Flash"){
                 flash_module($hostname, $filer_os);
         }
+
+        when("FlashCache"){
+                flashcache_module($hostname, $filer_os);
+        }
+
         when("FCP"){
                 fcp_module($hostname, $filer_os);
         }
+
         when("IOPS"){
             if($filer_os eq "cDOT"){
                     iops_module($hostname);

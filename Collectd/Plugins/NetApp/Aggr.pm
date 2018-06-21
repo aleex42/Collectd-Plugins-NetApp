@@ -174,9 +174,16 @@ sub cdot_aggr_df {
         if($instances_list){
     
             my @instances = $instances_list->children_get();
-    
+   
+            my $ultra_free = 0;
+            my $performance_free = 0;
+            my $mass_free = 0;
+            my $ultra_used = 0;
+            my $performance_used = 0;
+            my $mass_used = 0;
+ 
             foreach my $aggr (@instances){
-    
+   
                 my $aggr_name = $aggr->child_get_string("name");
     
                 my $counters_list = $aggr->child_get("counters");
@@ -199,9 +206,26 @@ sub cdot_aggr_df {
                     my $free_space = $usable_space - $used_space;
     
                     $df_return{$aggr_name} = [ $used_space, $free_space, $values{user_reads}, $values{user_writes} ];      
+                
+                    if(($aggr_name =~ m/ata/) || ($aggr_name =~ m/mass/)){
+                        $mass_used += $used_space;
+                        $mass_free += $free_space;
+                    } elsif(($aggr_name =~ m/ssd/) || ($aggr_name =~ m/ultra/)){
+                        $ultra_used += $used_space;
+                        $ultra_free += $free_space;
+                    } elsif(($aggr_name =~ m/sas/) || ($aggr_name =~ m/performance/)){
+                        $performance_used += $used_space;
+                        $performance_free += $free_space;
+                    }
                 }
             }
+
+            $df_return{ultra} = [ $ultra_used, $ultra_free, undef, undef ];
+            $df_return{performance} = [ $performance_used, $performance_free, undef, undef ];
+            $df_return{mass} = [ $mass_used, $mass_free, undef, undef ];
+
             return \%df_return;
+
         } else {
             plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df no aggr instance found: $hostname");
             return undef;
@@ -243,6 +267,10 @@ sub cdot_aggr_df_reserved {
 
     my @result = $volumes->children_get();
 
+        my $ultra_total = 0;
+        my $performance_total = 0;
+        my $mass_total = 0;
+
         foreach my $vol (@result){
 
             my $vol_state_attributes = $vol->child_get("volume-state-attributes");
@@ -264,9 +292,21 @@ sub cdot_aggr_df_reserved {
                     } else {
                         $aggr_df{$aggr} = $total;
                     }
+
+                    if(($aggr =~ m/ata/) || ($aggr =~ m/mass/)){
+                        $mass_total += $total;
+                    } elsif(($aggr =~ m/ssd/) || ($aggr =~ m/ultra/)){
+                        $ultra_total += $total;
+                    } elsif(($aggr =~ m/sas/) || ($aggr =~ m/performance/)){
+                        $performance_total += $total;
+                    }
                 }
             }
         }
+
+        $aggr_df{ultra} = $ultra_total;
+        $aggr_df{performance} = $performance_total;
+        $aggr_df{mass} = $mass_total;
 
         return \%aggr_df;
 

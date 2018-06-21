@@ -98,6 +98,7 @@ sub cdot_lif {
                     foreach my $counter (@counter_result){
 
                         my $key = $counter->child_get_string("name");
+    
                         if(exists $values{$key}){
                             $values{$key} = $counter->child_get_string("value");
                         }
@@ -165,6 +166,8 @@ sub cdot_port {
 
                 my $nic_name = $nic->child_get_string("uuid");
                 $nic_name =~ s/kernel://;
+
+#                plugin_log("DEBUG_LOG", "*DEBUG* $nic_name");
 
                 my $counters = $nic->child_get("counters");
                 if($counters){

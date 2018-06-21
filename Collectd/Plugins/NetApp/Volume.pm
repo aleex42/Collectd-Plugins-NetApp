@@ -160,7 +160,6 @@ sub cdot_vol_perf {
     
                 #plugin_log("LOG_DEBUG", "--> $vol_name");
     
-    
                 my $counters_list = $volume->child_get("counters");
                 if($counters_list){
                     my @counters =  $counters_list->children_get();
@@ -177,6 +176,8 @@ sub cdot_vol_perf {
                     }
     
                     $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data} ];
+                    #plugin_log("LOG_DEBUG", "$vol_name: $values{read_ops}, $values{write_ops}, $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}");
+
                 }
             }
         }

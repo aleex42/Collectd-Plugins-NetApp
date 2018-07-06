@@ -65,6 +65,8 @@ sub module_thread_func {
 
     my ($module, $hostname, $filer_os, $volume) = @_;
 
+    my $starttime = time();
+
     $SIG{'KILL'} = sub { plugin_log("LOG_INFO", "*TIMEOUT* module $hostname/$module GOT KILLED") };
 
     given($module){
@@ -115,13 +117,16 @@ sub module_thread_func {
 # nothing
         }
     }
-    plugin_log("LOG_DEBUG", "*DEBUG* finished thread $hostname/$module");
+    
+    my $duration = time()-$starttime;
+
+    plugin_log("LOG_DEBUG", "*DEBUG* finished thread $hostname/$module (duration: $duration)");
 }
 
 sub my_get {
 
     my @hosts = keys %{ $cfg->{_DATA}};
-    my $timeout = 20;
+    my $timeout = 10;
     my @threads = ();
 
     plugin_log("LOG_DEBUG", "*DEBUG* STARTED");

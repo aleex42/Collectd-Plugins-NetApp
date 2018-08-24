@@ -40,7 +40,7 @@ sub cdot_cpu {
     eval {
         $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "processor:node");
     };
-    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_cpu: $@") if $@;
+    plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_cpu: $@") if $@;
 
     if($output){
         my $nodes = $output->child_get("attributes-list");
@@ -126,7 +126,7 @@ sub smode_cpu {
     eval {
         $xo = connect_filer($hostname)->invoke_elem($api);
     };
-    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_cpu: $@") if $@;
+    plugin_log(LOG_DEBUG, "*DEBUG* connect fail smode_cpu: $@") if $@;
 
 
     my $instances = $xo->child_get("instances");
@@ -168,7 +168,7 @@ sub cpu_module {
             eval {
                 $cpu_result = cdot_cpu($hostname);
             };
-            plugin_log("DEBUG_LOG", "*DEBUG* cdot_cpu: $@") if $@;
+            plugin_log(LOG_DEBUG, "*DEBUG* cdot_cpu: $@") if $@;
 
         }
 
@@ -179,7 +179,7 @@ sub cpu_module {
             eval {
                 $cpu_result = smode_cpu($hostname);
             };
-            plugin_log("DEBUG_LOG", "*DEBUG* smode_cpu: $@") if $@;
+            plugin_log(LOG_DEBUG, "*DEBUG* smode_cpu: $@") if $@;
 
         }
     }

@@ -43,7 +43,7 @@ sub smode_aggr_df {
     eval {
         $out = connect_filer($hostname)->invoke_elem($in);
     };
-    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_aggr_df: $@") if $@;
+    plugin_log(LOG_DEBUG, "*DEBUG* connect fail smode_aggr_df: $@") if $@;
     
     my $aggrs = $out->child_get("aggregates");
     
@@ -88,7 +88,7 @@ sub smode_aggr_iops {
     eval {
         $out = connect_filer($hostname)->invoke_elem($in);
     };
-    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_aggr_iops: $@") if $@;
+    plugin_log(LOG_DEBUG, "*DEBUG* connect fail smode_aggr_iops: $@") if $@;
 
     my $instances_list = $out->child_get("instances");
     if($instances_list){
@@ -168,7 +168,7 @@ sub cdot_aggr_df {
         eval {
             $out = connect_filer($hostname)->invoke_elem($in);
         };
-        plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df") if $@;
+        plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df") if $@;
     
         my $instances_list = $out->child_get("instances");
         if($instances_list){
@@ -227,11 +227,11 @@ sub cdot_aggr_df {
             return \%df_return;
 
         } else {
-            plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df no aggr instance found: $hostname");
+            plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df no aggr instance found: $hostname");
             return undef;
         }
     } else {
-        plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df no aggregates found: $hostname");
+        plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df no aggregates found: $hostname");
         return undef;
     }
 }
@@ -331,7 +331,7 @@ sub aggr_module {
             eval {
                 $aggr_df_result = cdot_aggr_df($hostname);
             };            
-            plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df: $@") if $@;
+            plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df: $@") if $@;
  
             if($aggr_df_result){
 
@@ -379,7 +379,7 @@ sub aggr_module {
             eval {
                 $aggr_df_reserved = cdot_aggr_df_reserved($hostname);
             };
-            plugin_log("DEBUG_LOG", "*DEBUG* cdot_aggr_df_reserved: $@") if $@;
+            plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df_reserved: $@") if $@;
 
             if($aggr_df_reserved){
 
@@ -408,7 +408,7 @@ sub aggr_module {
             eval {
                 $aggr_iops_result = smode_aggr_iops($hostname);
             };
-            plugin_log("DEBUG_LOG", "*DEBUG* smode_aggr_iops: $@") if $@;
+            plugin_log(LOG_DEBUG, "*DEBUG* smode_aggr_iops: $@") if $@;
 
             if($aggr_iops_result){
 
@@ -434,7 +434,7 @@ sub aggr_module {
             eval {
                 $aggr_df_result = smode_aggr_df($hostname);
             };
-            plugin_log("DEBUG_LOG", "*DEBUG* smode_aggr_df: $@") if $@;
+            plugin_log(LOG_DEBUG, "*DEBUG* smode_aggr_df: $@") if $@;
 
             if($aggr_df_result){
 

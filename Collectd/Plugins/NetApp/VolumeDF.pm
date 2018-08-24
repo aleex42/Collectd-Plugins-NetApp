@@ -53,7 +53,7 @@ sub cdot_vol_df {
     eval {
         $output = connect_filer($hostname)->invoke_elem($api);
     };
-    plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_vol_df: $@") if $@;
+    plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_vol_df: $@") if $@;
 
     my $volumes = $output->child_get("attributes-list");
 
@@ -154,7 +154,7 @@ sub volume_df_module {
             eval {
                 $df_result = cdot_vol_df($hostname);
             };
-            plugin_log("DEBUG_LOG", "*DEBUG* cdot_vol_df: $@") if $@;
+            plugin_log(LOG_DEBUG, "*DEBUG* cdot_vol_df: $@") if $@;
 
             if($df_result){
 

@@ -67,7 +67,7 @@ sub module_thread_func {
 
     my $starttime = time();
 
-    $SIG{'KILL'} = sub { plugin_log("LOG_INFO", "*TIMEOUT* module $hostname/$module GOT KILLED") };
+    $SIG{'KILL'} = sub { plugin_log(LOG_INFO, "*TIMEOUT* module $hostname/$module GOT KILLED") };
 
     given($module){
 
@@ -120,7 +120,7 @@ sub module_thread_func {
     
     my $duration = time()-$starttime;
 
-    plugin_log("LOG_DEBUG", "*DEBUG* finished thread $hostname/$module (duration: $duration)");
+    plugin_log(LOG_DEBUG, "*DEBUG* finished thread $hostname/$module (duration: $duration)");
 }
 
 sub my_get {
@@ -129,12 +129,12 @@ sub my_get {
     my $timeout = 10;
     my @threads = ();
 
-    plugin_log("LOG_DEBUG", "*DEBUG* STARTED");
+    plugin_log(LOG_DEBUG, "*DEBUG* STARTED");
     my $start = time();
 
     foreach my $hostname (@hosts)  {
 
-#         plugin_log("LOG_DEBUG", "*DEBUG* hostname $hostname");
+#         plugin_log(LOG_DEBUG, "*DEBUG* hostname $hostname");
 
         my $filer_os = $Config{ $hostname . '.Mode'};
         my $modules = $Config{ $hostname . '.Modules'};
@@ -145,28 +145,28 @@ sub my_get {
 
             foreach my $module (@modules_array){
 
-#                plugin_log("LOG_DEBUG", "*DEBUG* module: $module");
+#                plugin_log(LOG_DEBUG, "*DEBUG* module: $module");
 
 	    		push(@threads, threads->create (\&module_thread_func, $module, $hostname, $filer_os));
-		        plugin_log("LOG_DEBUG", "*DEBUG* new thread $hostname/$module");
+		        plugin_log(LOG_DEBUG, "*DEBUG* new thread $hostname/$module");
             }
         }
     }
 
     sleep $timeout-(time()-$start);
 
-    plugin_log("LOG_DEBUG", "*DEBUG* DETACHING ". threads->list(threads::joinable));
+    plugin_log(LOG_DEBUG, "*DEBUG* DETACHING ". threads->list(threads::joinable));
     foreach (threads->list(threads::joinable)) {
         $_->join();
     }
 
-    plugin_log("LOG_DEBUG", "*DEBUG* STILL RUNNING ". threads->list(threads::running));
+    plugin_log(LOG_DEBUG, "*DEBUG* STILL RUNNING ". threads->list(threads::running));
     foreach (threads->list(threads::running)) {
         $_->kill('KILL');
         $_->detach();
     }
 
-    plugin_log("LOG_DEBUG", "*DEBUG* FINISHED ");
+    plugin_log(LOG_DEBUG, "*DEBUG* FINISHED ");
 
     return 1;
 }

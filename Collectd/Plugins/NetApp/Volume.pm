@@ -48,7 +48,7 @@ sub smode_vol_perf {
     eval {
         $out = connect_filer($hostname)->invoke_elem($in);
     };
-    plugin_log("DEBUG_LOG", "*DEBUG* connect fail smode_vol_perf: $@") if $@;
+    plugin_log(LOG_DEBUG, "*DEBUG* connect fail smode_vol_perf: $@") if $@;
 
     my $instances_list = $out->child_get("instances");
 
@@ -112,7 +112,7 @@ sub cdot_vol_perf {
         eval {  
             $vol_output = connect_filer($hostname)->invoke_elem($vol_api);
         };
-        #plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
+        #plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
 
         my $vol_instances_list = $vol_output->child_get("attributes-list");
 
@@ -156,7 +156,7 @@ sub cdot_vol_perf {
             eval {
                 $xo = connect_filer($hostname)->invoke_elem($api);
             };
-            #plugin_log("DEBUG_LOG", "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
+            #plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
     
             my $instances_list = $xo->child_get("instances");
             if($instances_list){
@@ -168,7 +168,7 @@ sub cdot_vol_perf {
                     my $vol_uuid = $volume->child_get_string("uuid");
                     my $vol_name = $vol_uuids{$vol_uuid};
 
-                    #plugin_log("LOG_DEBUG", "--> $vol_name");
+                    #plugin_log(LOG_DEBUG, "--> $vol_name");
 
                     my $counters_list = $volume->child_get("counters");
                     if($counters_list){
@@ -186,7 +186,7 @@ sub cdot_vol_perf {
                         }
 
                         $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data} ];
-#            plugin_log("LOG_DEBUG", "$vol_name: $values{read_ops}, $values{write_ops}, $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}");
+#            plugin_log(LOG_DEBUG, "$vol_name: $values{read_ops}, $values{write_ops}, $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}");
 
                     }
                 }
@@ -213,7 +213,7 @@ sub volume_module {
             eval {
                 $perf_result = cdot_vol_perf($hostname);
             };
-            plugin_log("DEBUG_LOG", "*DEBUG* cdot_vol_perf: $@") if $@;
+            plugin_log(LOG_DEBUG, "*DEBUG* cdot_vol_perf: $@") if $@;
 
             if($perf_result){
 
@@ -262,7 +262,7 @@ sub volume_module {
             eval {
                 $perf_result = smode_vol_perf($hostname);
             };
-            plugin_log("DEBUG_LOG", "*DEBUG* smode_vol_perf: $@") if $@;
+            plugin_log(LOG_DEBUG, "*DEBUG* smode_vol_perf: $@") if $@;
 
             if($perf_result){
 

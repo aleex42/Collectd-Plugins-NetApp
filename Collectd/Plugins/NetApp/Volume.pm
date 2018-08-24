@@ -127,8 +127,12 @@ sub cdot_vol_perf {
                 my $vol_uuid = $vol_id_attributes->child_get_string("instance-uuid");
                 my $vol_name = $vol_id_attributes->child_get_string("name");
 
-                unless($vol_name =~ m/temp__/){   
-                    $vol_uuids{$vol_uuid} = $vol_name;
+                # ONTAP 9.2 no uuid?
+                if($vol_uuid){
+
+                    unless($vol_name =~ m/temp__/){   
+                        $vol_uuids{$vol_uuid} = $vol_name;
+                    }
                 }
             }
 

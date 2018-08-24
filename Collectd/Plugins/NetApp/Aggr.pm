@@ -220,6 +220,10 @@ sub cdot_aggr_df {
                 }
             }
 
+
+
+
+
             $df_return{ultra} = [ $ultra_used, $ultra_free, undef, undef ];
             $df_return{performance} = [ $performance_used, $performance_free, undef, undef ];
             $df_return{mass} = [ $mass_used, $mass_free, undef, undef ];
@@ -287,18 +291,22 @@ sub cdot_aggr_df_reserved {
 
                     my $total = $vol_space->child_get_string("size-total");
 
-                    if($aggr_df{$aggr}){
-                        $aggr_df{$aggr} += $total;
-                    } else {
-                        $aggr_df{$aggr} = $total;
-                    }
+                    # Flexgroup has no aggr
+                    if($aggr){
 
-                    if(($aggr =~ m/ata/) || ($aggr =~ m/mass/)){
-                        $mass_total += $total;
-                    } elsif(($aggr =~ m/ssd/) || ($aggr =~ m/ultra/)){
-                        $ultra_total += $total;
-                    } elsif(($aggr =~ m/sas/) || ($aggr =~ m/performance/)){
-                        $performance_total += $total;
+                        if($aggr_df{$aggr}){
+                            $aggr_df{$aggr} += $total;
+                        } else {
+                            $aggr_df{$aggr} = $total;
+                        }
+
+                        if(($aggr =~ m/ata/) || ($aggr =~ m/mass/)){
+                            $mass_total += $total;
+                        } elsif(($aggr =~ m/ssd/) || ($aggr =~ m/ultra/)){
+                            $ultra_total += $total;
+                        } elsif(($aggr =~ m/sas/) || ($aggr =~ m/performance/)){
+                            $performance_total += $total;
+                        }
                     }
                 }
             }
@@ -362,7 +370,9 @@ sub aggr_module {
                             time => $starttime,
                             });
 
-                    plugin_dispatch_values({
+                    unless(($aggr eq "mass") || ($aggr eq "performance") || ($aggr eq "ultra")){
+
+                        plugin_dispatch_values({
                             plugin => 'iops_aggr',
                             type => 'disk_ops',
                             type_instance => $aggr,
@@ -371,6 +381,7 @@ sub aggr_module {
                             host => $hostname,
                             time => $starttime,
                             });
+                    }
                 }
             }
 

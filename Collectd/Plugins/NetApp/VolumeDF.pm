@@ -70,7 +70,7 @@ sub cdot_vol_df {
                 my $vol_info = $vol->child_get("volume-id-attributes");
                 my $vol_name = $vol_info->child_get_string("name");
 
-                unless(($vol_name =~ m/^temp-/) || ($vol_name =~ m/^temp__/)){
+                unless(($vol_name =~ m/^temp-/) || ($vol_name =~ m/^temp__/) || ($vol_name =~/vol0/)){
 
                     if($vol_state_attributes->child_get_string("state") eq "online"){
 
@@ -80,6 +80,27 @@ sub cdot_vol_df {
                         my $free = $vol_space->child_get_int("size-available");
 
                         $df_return{$vol_name} = [ $used, $free ];
+
+                    plugin_dispatch_values({
+                            plugin => 'df_vol',
+                            plugin_instance => $vol_name,
+                            type => 'df_complex',
+                            type_instance => 'used',
+                            values => [$used],
+                            interval => '30',
+                            host => $hostname,
+                            });
+
+                    plugin_dispatch_values({
+                            plugin => 'df_vol',
+                            plugin_instance => $vol_name,
+                            type => 'df_complex',
+                            type_instance => 'free',
+                            values => [$free],
+                            interval => '30',
+                            host => $hostname,
+                            });
+
                     }
                 }
             }
@@ -156,36 +177,6 @@ sub volume_df_module {
             };
             plugin_log(LOG_DEBUG, "*DEBUG* cdot_vol_df: $@") if $@;
 
-            if($df_result){
-
-                foreach my $vol (keys %$df_result){
-
-                    my $vol_value_ref = $df_result->{$vol};
-                    my @vol_value = @{ $vol_value_ref };
-
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
-                            type => 'df_complex',
-                            type_instance => 'used',
-                            values => [$vol_value[0]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol,
-                            type => 'df_complex',
-                            type_instance => 'free',
-                            values => [$vol_value[1]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-                }                   
-            }
         }
 
         default {

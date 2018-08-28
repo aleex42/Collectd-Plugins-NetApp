@@ -101,7 +101,17 @@ sub cdot_fcp {
                             $values{$key} = $counter->child_get_string("value");
                         }
                     }
-                    $nic_return{$nic_name} = [ $values{read_data}, $values{write_data} ];
+#                    $nic_return{$nic_name} = [ $values{read_data}, $values{write_data} ];
+
+                    plugin_dispatch_values({
+                            plugin => 'fcp_lif',
+                            plugin_instance => $nic_name,
+                            type => 'if_octets',
+                            values => [ $values{read_data}, $values{write_data}  ],
+                            interval => '30',
+                            host => $hostname,
+                            #time => $starttime,
+                            });
                     
                 }
             }
@@ -127,24 +137,6 @@ sub fcp_module {
             };
             plugin_log(LOG_DEBUG, "*DEBUG* cdot_fcp: $@") if $@;
 
-            if($lif_result){
-
-                foreach my $lif (keys %$lif_result){
-
-                    my $lif_value_ref = $lif_result->{$lif};
-                    my @lif_value = @{ $lif_value_ref };
-
-                    plugin_dispatch_values({
-                            plugin => 'fcp_lif',
-                            plugin_instance => $lif,
-                            type => 'if_octets',
-                            values => [$lif_value[0], $lif_value[1]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-                }
-            }
         }
     }
 

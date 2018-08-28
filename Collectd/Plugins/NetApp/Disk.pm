@@ -227,6 +227,20 @@ sub cdot_disk {
                     }
                 }
             }
+
+            my $aggr_value_ref = $max_percent{$aggr};
+            my @aggr_value = @{ $aggr_value_ref };
+
+            plugin_dispatch_values({
+                plugin => 'disk_busy',
+                type => 'netapp_disk_busy',
+                type_instance => $aggr,
+                values => [ @aggr_value ],
+                interval => '30',
+                host => $hostname,
+                #time => $starttime,
+            });
+
         }
         return \%max_percent;
     } else {
@@ -249,24 +263,6 @@ sub disk_module {
             };
             plugin_log(LOG_DEBUG, "*DEBUG* cdot_disk: $@") if $@;
 
-            if($disk_result){
-
-                foreach my $aggr (keys %$disk_result){
-
-                    my $aggr_value_ref = $disk_result->{$aggr};
-                    my @aggr_value = @{ $aggr_value_ref };                 
-
-                    plugin_dispatch_values({
-                            plugin => 'disk_busy',
-                            type => 'netapp_disk_busy',
-                            type_instance => $aggr,
-                            values => [@aggr_value],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-                }
-            }
         }
 
         default {

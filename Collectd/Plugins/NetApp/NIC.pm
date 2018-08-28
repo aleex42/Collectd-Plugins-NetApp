@@ -85,6 +85,7 @@ sub cdot_lif {
             foreach my $nic (@instance_data){
 
                 my $nic_name = $nic->child_get_string("name");
+                my $nic_uuid = $nic->child_get_string("uuid");
 
                 #plugin_log(LOG_DEBUG, "--> $nic_name");
 
@@ -103,7 +104,18 @@ sub cdot_lif {
                             $values{$key} = $counter->child_get_string("value");
                         }
                     }
-                    $nic_return{$nic_name} = [ $values{recv_data}, $values{sent_data} ];
+#                    $nic_return{$nic_name} = [ $values{recv_data}, $values{sent_data} ];
+
+                    plugin_dispatch_values({
+                            plugin => 'interface_lif',
+                            plugin_instance => "$nic_name-$nic_uuid",
+                            type => 'if_octets',
+                            values => [ $values{recv_data}, $values{sent_data} ],
+                            interval => '30',
+                            host => $hostname,
+#                            time => $starttime,
+                    });
+
                 }
             }
         }
@@ -183,7 +195,17 @@ sub cdot_port {
                             $values{$key} = $counter->child_get_string("value");
                         }
                     }
-                    $port_return{$nic_name} = [ $values{rx_total_bytes}, $values{tx_total_bytes} ];
+#                    $port_return{$nic_name} = [ $values{rx_total_bytes}, $values{tx_total_bytes} ];
+
+                    plugin_dispatch_values({
+                            plugin => 'interface_port',
+                            plugin_instance => $nic_name,
+                            type => 'if_octets',
+                            values => [ $values{rx_total_bytes}, $values{tx_total_bytes} ],
+                            interval => '30',
+                            host => $hostname,
+#                            time => $starttime,
+                            });
                 }
             }
         }
@@ -260,49 +282,11 @@ sub nic_module {
             };
             plugin_log(LOG_DEBUG, "*DEBUG* cdot_lif: $@") if $@;
 
-            if($lif_result){
-
-                foreach my $lif (keys %$lif_result){
-
-                    my $lif_value_ref = $lif_result->{$lif};
-                    my @lif_value = @{ $lif_value_ref };
-
-                    plugin_dispatch_values({
-                            plugin => 'interface_lif',
-                            plugin_instance => $lif,
-                            type => 'if_octets',
-                            values => [$lif_value[0], $lif_value[1]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-                }
-            }
-
             my $port_result;
             eval {
                 $port_result = cdot_port($hostname);
             };
             plugin_log(LOG_DEBUG, "*DEBUG* cdot_port: $@") if $@;
-
-            if($port_result){
-
-                foreach my $port (keys %$port_result){
-
-                    my $port_value_ref = $port_result->{$port};
-                    my @port_value = @{ $port_value_ref };
-
-                    plugin_dispatch_values({
-                            plugin => 'interface_port',
-                            plugin_instance => $port,
-                            type => 'if_octets',
-                            values => [$port_value[0], $port_value[1]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-                }
-            }
 
         }
 

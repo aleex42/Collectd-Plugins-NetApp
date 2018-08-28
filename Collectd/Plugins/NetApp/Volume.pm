@@ -172,6 +172,10 @@ sub cdot_vol_perf {
                     my $vol_uuid = $volume->child_get_string("uuid");
                     my $vol_name = $vol_uuids{$vol_uuid};
 
+                    if($vol_name =~ m/vol0/){
+                        next;
+                    }
+
                     #plugin_log(LOG_DEBUG, "--> $vol_name");
 
                     my $counters_list = $volume->child_get("counters");
@@ -189,8 +193,35 @@ sub cdot_vol_perf {
                             }
                         }
 
-                        $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data} ];
+#                        $perf_return{$vol_name} = [ $values{read_ops}, $values{write_ops}, $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data} ];
 #            plugin_log(LOG_DEBUG, "$vol_name: $values{read_ops}, $values{write_ops}, $values{read_latency}, $values{write_latency}, $values{read_data}, $values{write_data}");
+
+                   plugin_dispatch_values({
+                           plugin => 'latency_vol',
+                            plugin_instance => $vol_name,
+                            type => 'netapp_vol_latency',
+                            values => [ $values{read_latency}, $values{write_latency}, $values{read_ops}, $values{write_ops} ],
+                            interval => '30',
+                            host => $hostname,
+                            });
+
+                    plugin_dispatch_values({
+                            plugin => 'traffic_vol',
+                            plugin_instance => $vol_name,
+                            type => 'disk_octets',
+                            values => [ $values{read_data}, $values{write_data} ],
+                            interval => '30',
+                            host => $hostname,
+                            });
+
+                    plugin_dispatch_values({
+                            plugin => 'iops_vol',
+                            plugin_instance => $vol_name,
+                            type => 'disk_ops',
+                            values => [ $values{read_ops}, $values{write_ops} ],
+                            interval => '30',
+                            host => $hostname,
+                            });
 
                     }
                 }
@@ -219,45 +250,6 @@ sub volume_module {
             };
             plugin_log(LOG_DEBUG, "*DEBUG* cdot_vol_perf: $@") if $@;
 
-            if($perf_result){
-
-                foreach my $perf_vol (keys %$perf_result){
-
-                    my $perf_vol_value_ref = $perf_result->{$perf_vol};
-                    my @perf_vol_value = @{ $perf_vol_value_ref };
-
-                    plugin_dispatch_values({
-                           plugin => 'latency_vol',
-                            plugin_instance => $perf_vol,
-                            type => 'netapp_vol_latency',
-                            values => [$perf_vol_value[2], $perf_vol_value[3], $perf_vol_value[0], $perf_vol_value[1]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'traffic_vol',
-                            plugin_instance => $perf_vol,
-                            type => 'disk_octets',
-                            values => [$perf_vol_value[4], $perf_vol_value[5]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'iops_vol',
-                            plugin_instance => $perf_vol,
-                            type => 'disk_ops',
-                            values => [$perf_vol_value[0], $perf_vol_value[1]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-
-                }
-            }
         }
 
         default {

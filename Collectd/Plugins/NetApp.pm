@@ -120,7 +120,7 @@ sub module_thread_func {
     
     my $duration = time()-$starttime;
 
-    plugin_log(LOG_DEBUG, "*DEBUG* finished thread $hostname/$module (duration: $duration)");
+    plugin_log(LOG_INFO, "*DEBUG* finished thread $hostname/$module (duration: $duration)");
 }
 
 sub my_get {

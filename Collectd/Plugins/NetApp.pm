@@ -126,10 +126,10 @@ sub module_thread_func {
 sub my_get {
 
     my @hosts = keys %{ $cfg->{_DATA}};
-    my $timeout = 10;
+    my $timeout = 8;
     my @threads = ();
 
-    plugin_log(LOG_DEBUG, "*DEBUG* STARTED");
+    plugin_log(LOG_INFO, "*DEBUG* STARTED");
     my $start = time();
 
     foreach my $hostname (@hosts)  {
@@ -148,25 +148,25 @@ sub my_get {
 #                plugin_log(LOG_DEBUG, "*DEBUG* module: $module");
 
 	    		push(@threads, threads->create (\&module_thread_func, $module, $hostname, $filer_os));
-		        plugin_log(LOG_DEBUG, "*DEBUG* new thread $hostname/$module");
+		        plugin_log(LOG_INFO, "*DEBUG* new thread $hostname/$module");
             }
         }
     }
 
     sleep $timeout-(time()-$start);
 
-    plugin_log(LOG_DEBUG, "*DEBUG* DETACHING ". threads->list(threads::joinable));
+    plugin_log(LOG_INFO, "*DEBUG* DETACHING ". threads->list(threads::joinable));
     foreach (threads->list(threads::joinable)) {
         $_->join();
     }
 
-    plugin_log(LOG_DEBUG, "*DEBUG* STILL RUNNING ". threads->list(threads::running));
+    plugin_log(LOG_INFO, "*DEBUG* STILL RUNNING ". threads->list(threads::running));
     foreach (threads->list(threads::running)) {
         $_->kill('KILL');
         $_->detach();
     }
 
-    plugin_log(LOG_DEBUG, "*DEBUG* FINISHED ");
+    plugin_log(LOG_INFO, "*DEBUG* FINISHED ");
 
     return 1;
 }

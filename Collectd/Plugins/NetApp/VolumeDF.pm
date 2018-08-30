@@ -83,23 +83,33 @@ sub cdot_vol_df {
 
                     plugin_dispatch_values({
                             plugin => 'df_vol',
-                            plugin_instance => $vol_name,
-                            type => 'df_complex',
-                            type_instance => 'used',
-                            values => [$used],
+                            #plugin_instance => $vol_name,
+                            type => 'df',
+                            type_instance => $vol_name,
+                            values => [$used, $free],
                             interval => '30',
                             host => $hostname,
                             });
 
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            plugin_instance => $vol_name,
-                            type => 'df_complex',
-                            type_instance => 'free',
-                            values => [$free],
-                            interval => '30',
-                            host => $hostname,
-                            });
+#                    plugin_dispatch_values({
+#                            plugin => 'df_vol',
+#                            plugin_instance => $vol_name,
+#                            type => 'df_complex',
+#                            type_instance => 'used',
+#                            values => [$used],
+#                            interval => '30',
+#                            host => $hostname,
+#                            });
+#
+#                    plugin_dispatch_values({
+#                            plugin => 'df_vol',
+#                            plugin_instance => $vol_name,
+#                            type => 'df_complex',
+#                            type_instance => 'free',
+#                            values => [$free],
+#                            interval => '30',
+#                            host => $hostname,
+#                            });
 
                     }
                 }

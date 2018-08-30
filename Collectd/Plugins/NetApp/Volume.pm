@@ -198,8 +198,9 @@ sub cdot_vol_perf {
 
                    plugin_dispatch_values({
                            plugin => 'latency_vol',
-                            plugin_instance => $vol_name,
+#                            plugin_instance => $vol_name,
                             type => 'netapp_vol_latency',
+                            type_instance => $vol_name,
                             values => [ $values{read_latency}, $values{write_latency}, $values{read_ops}, $values{write_ops} ],
                             interval => '30',
                             host => $hostname,
@@ -207,8 +208,9 @@ sub cdot_vol_perf {
 
                     plugin_dispatch_values({
                             plugin => 'traffic_vol',
-                            plugin_instance => $vol_name,
+                            #plugin_instance => $vol_name,
                             type => 'disk_octets',
+                            type_instance => $vol_name,
                             values => [ $values{read_data}, $values{write_data} ],
                             interval => '30',
                             host => $hostname,
@@ -216,8 +218,9 @@ sub cdot_vol_perf {
 
                     plugin_dispatch_values({
                             plugin => 'iops_vol',
-                            plugin_instance => $vol_name,
+#                            plugin_instance => $vol_name,
                             type => 'disk_ops',
+                            type_instance => $vol_name,
                             values => [ $values{read_ops}, $values{write_ops} ],
                             interval => '30',
                             host => $hostname,

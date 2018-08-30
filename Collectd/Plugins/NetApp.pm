@@ -129,7 +129,7 @@ sub my_get {
     my $timeout = 8;
     my @threads = ();
 
-    plugin_log(LOG_INFO, "*DEBUG* STARTED");
+#    plugin_log(LOG_INFO, "*DEBUG* STARTED");
     my $start = time();
 
     foreach my $hostname (@hosts)  {
@@ -148,7 +148,7 @@ sub my_get {
 #                plugin_log(LOG_DEBUG, "*DEBUG* module: $module");
 
 	    		push(@threads, threads->create (\&module_thread_func, $module, $hostname, $filer_os));
-		        plugin_log(LOG_INFO, "*DEBUG* new thread $hostname/$module");
+#		        plugin_log(LOG_INFO, "*DEBUG* new thread $hostname/$module");
             }
         }
     }

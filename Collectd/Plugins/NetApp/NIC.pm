@@ -108,12 +108,12 @@ sub cdot_lif {
 
                     plugin_dispatch_values({
                             plugin => 'interface_lif',
-                            plugin_instance => "$nic_name-$nic_uuid",
+#                            plugin_instance => "$nic_name-$nic_uuid",
                             type => 'if_octets',
+                            type_instance => "$nic_name $nic_uuid",
                             values => [ $values{recv_data}, $values{sent_data} ],
                             interval => '30',
                             host => $hostname,
-#                            time => $starttime,
                     });
 
                 }
@@ -199,8 +199,8 @@ sub cdot_port {
 
                     plugin_dispatch_values({
                             plugin => 'interface_port',
-                            plugin_instance => $nic_name,
                             type => 'if_octets',
+                            type_instance => $nic_name,
                             values => [ $values{rx_total_bytes}, $values{tx_total_bytes} ],
                             interval => '30',
                             host => $hostname,

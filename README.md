@@ -22,38 +22,20 @@ For detailed documentation and examples have a look at my Mediawiki:
 
 ## Modules
 
-    * CPU
-      CPU Busy (unit is "percent", even if "jiffies" is shown)
-      
-    * Aggr
-      Aggregate Space Usage and IOPs
-
-    * Volume
-      Volume Space Usage, IOPs, Latency and Traffic
-
-    * NIC
-      Network Interface Traffic
-
-    * FCP
-      Fibre Channel HBA traffic
-
-    * FlashCache
-      FlashCache (also NVMe) stats
-
-    * Flash
-      FlashPool stats
-
-    * Disk
-      Disk Busy per Aggregate
-
-    * Flash Pool Hit-Ratio
-      Hit-Ratio (read/write) for Hybrid Aggregates
+* CPU: CPU Busy (unit is "percent", even if "jiffies" is shown)
+* Aggr: Aggregate Space Usage and IOPs
+* Volume: Volume Space Usage, IOPs, Latency and Traffic
+* NIC: Network Interface Traffic
+* FCP: Fibre Channel HBA traffic
+* FlashCache: FlashCache (also NVMe) stats
+* Flash: FlashPool stats
+* Disk: Disk Busy per Aggregate
 
 ## Configuration:
 
-    * Config File (/etc/collectd/sample-collectd.conf)
+* Config File (/etc/collectd/sample-collectd.conf)
 
-    * Credentials File (/etc/collectd/netapp.ini)
+* Credentials File (/etc/collectd/netapp.ini)
 
 ## Custom Types:
 

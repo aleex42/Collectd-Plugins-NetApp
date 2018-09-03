@@ -32,10 +32,24 @@ sub connect_filer {
 
     my $mode = $Config{ $hostname . '.Mode'};
 
+    my ($username, $password);
+
+    if($Config{ $hostname . '.Username'}){
+        $username = $Config{ $hostname . '.Username'};
+    } else { 
+        $username = $Config{ 'Default.Username'};
+    }
+
+    if($Config{ $hostname . '.Password'}){
+        $password = $Config{ $hostname . '.Password'};
+    } else {
+        $password = $Config{ 'Default.Password'}
+    }
+
     my $s = NaServer->new( $hostname, 1, 3 );
     $s->set_style('LOGIN');
     $s->set_timeout(10);
-    $s->set_admin_user( $Config{ $hostname . '.Username'}, $Config{ $hostname . '.Password'});
+    $s->set_admin_user( $username, $password );
 
     if($mode eq "cDOT"){
         $s->set_transport_type('HTTPS');

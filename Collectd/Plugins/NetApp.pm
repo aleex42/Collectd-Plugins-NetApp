@@ -39,6 +39,8 @@ use Data::Dumper;
 use Collectd qw( :all );
 use Config::Simple;
 
+my @cdot_modules = ("CPU", "Aggr", "Volume", "VolumeDF", "NIC", "Disk", "Flash", "IOPS", "FlashCache", "FCP");
+
 my $ConfigFile = "/etc/collectd/netapp.ini";
 my $cfg = new Config::Simple($ConfigFile);
 my %Config = $cfg->vars();
@@ -108,9 +110,7 @@ sub module_thread_func {
         }
 
         when("IOPS"){
-            if($filer_os eq "cDOT"){
-                    iops_module($hostname);
-            }
+                iops_module($hostname);
         }
 
         default {
@@ -134,21 +134,26 @@ sub my_get {
 
     foreach my $hostname (@hosts)  {
 
+        # ignore default config
+        next if $hostname eq "Default";
+
 #         plugin_log(LOG_DEBUG, "*DEBUG* hostname $hostname");
 
         my $filer_os = $Config{ $hostname . '.Mode'};
-        my $modules = $Config{ $hostname . '.Modules'};
 
-        if($modules){
+        foreach my $module (@cdot_modules){
 
-            my @modules_array = @{ $modules };
+            my $exclude = $Config{ $hostname . '.ExcludeModules'};
 
-            foreach my $module (@modules_array){
+            if($exclude){
 
-#                plugin_log(LOG_DEBUG, "*DEBUG* module: $module");
+                $exclude=[$exclude] unless(ref($exclude) eq 'ARRAY');
 
-	    		push(@threads, threads->create (\&module_thread_func, $module, $hostname, $filer_os));
-#		        plugin_log(LOG_INFO, "*DEBUG* new thread $hostname/$module");
+                unless(grep(/$module/, @$exclude)){
+        #           plugin_log(LOG_DEBUG, "*DEBUG* module: $module");
+        	    	push(@threads, threads->create (\&module_thread_func, $module, $hostname, $filer_os));
+        #		    plugin_log(LOG_INFO, "*DEBUG* new thread $hostname/$module");
+                }
             }
         }
     }

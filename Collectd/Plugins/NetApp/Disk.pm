@@ -30,7 +30,7 @@ use NaElement;
 
 use Config::Simple;
 
-sub cdot_disk {
+sub disk_module {
 
     my $hostname = shift;
 
@@ -222,21 +222,6 @@ sub cdot_disk {
         });
 
     }
-
-    return \%max_percent;
-
-}
-
-sub disk_module {
-   
-    my $hostname = shift;
-    my $starttime = time();
-
-    my $disk_result;
-    eval {
-        $disk_result = cdot_disk($hostname);
-    };
-    plugin_log(LOG_DEBUG, "*DEBUG* cdot_disk: $@") if $@;
 
     return 1;
 }

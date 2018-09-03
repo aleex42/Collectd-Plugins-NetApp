@@ -30,10 +30,10 @@ use NaElement;
 
 use Config::Simple;
 
-sub cdot_cpu {
+sub cpu_module {
 
     my $hostname = shift;
-    my %cpu_return;
+    #my %cpu_return;
     my $starttime = time();
 
     my $output;
@@ -107,20 +107,7 @@ sub cdot_cpu {
             }
         }
     }
-    return \%cpu_return;
-}
-
-sub cpu_module {
-
-    my $hostname = shift;
-
-    my $cpu_result;
-
-    eval {
-        $cpu_result = cdot_cpu($hostname);
-    };
-    plugin_log(LOG_DEBUG, "*DEBUG* cdot_cpu: $@") if $@;
-
+#    return \%cpu_return;
     return 1;
 }
 

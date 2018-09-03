@@ -65,11 +65,15 @@ sub my_init {
 
 sub module_thread_func {
 
-    my ($module, $hostname, $volume) = @_;
+    my ($module, $hostname) = @_;
 
     my $starttime = time();
 
     $SIG{'KILL'} = sub { plugin_log(LOG_INFO, "*TIMEOUT* module $hostname/$module GOT KILLED") };
+
+#    plugin_log(LOG_INFO, "*DEBUG*: module $hostname: $module");
+
+    my $module_name = $module;
 
     given($module){
 
@@ -120,7 +124,7 @@ sub module_thread_func {
     
     my $duration = time()-$starttime;
 
-    plugin_log(LOG_INFO, "*DEBUG* finished thread $hostname/$module (duration: $duration)");
+#    plugin_log(LOG_INFO, "*DEBUG* finished thread $hostname/$module_name (duration: $duration)");
 }
 
 sub my_get {
@@ -137,8 +141,6 @@ sub my_get {
         # ignore default config
         next if $hostname eq "Default";
 
-#         plugin_log(LOG_DEBUG, "*DEBUG* hostname $hostname");
-
         foreach my $module (@cdot_modules){
 
             my $exclude = $Config{ $hostname . '.ExcludeModules'};
@@ -150,7 +152,7 @@ sub my_get {
                 unless(grep(/$module/, @$exclude)){
         #           plugin_log(LOG_DEBUG, "*DEBUG* module: $module");
         	    	push(@threads, threads->create (\&module_thread_func, $module, $hostname));
-        #		    plugin_log(LOG_INFO, "*DEBUG* new thread $hostname/$module");
+#        		    plugin_log(LOG_INFO, "*DEBUG* new thread $hostname/$module");
                 }
             }
         }

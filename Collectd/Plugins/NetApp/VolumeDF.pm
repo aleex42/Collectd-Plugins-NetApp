@@ -79,17 +79,19 @@ sub cdot_vol_df {
                         my $used = $vol_space->child_get_string("size-used");
                         my $free = $vol_space->child_get_int("size-available");
 
-                        $df_return{$vol_name} = [ $used, $free ];
+                        unless(defined($df_return{$vol_name})){
 
-                    plugin_dispatch_values({
-                            plugin => 'df_vol',
-                            #plugin_instance => $vol_name,
-                            type => 'df',
-                            type_instance => $vol_name,
-                            values => [$used, $free],
-                            interval => '30',
-                            host => $hostname,
+                            $df_return{$vol_name} = [ $used, $free ];
+
+                            plugin_dispatch_values({
+                                plugin => 'df_vol',
+                                type => 'df',
+                                type_instance => $vol_name,
+                                values => [$used, $free],
+                                interval => '30',
+                                host => $hostname,
                             });
+                        }
                     }
                 }
             }

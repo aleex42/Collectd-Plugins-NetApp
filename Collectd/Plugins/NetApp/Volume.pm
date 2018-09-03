@@ -31,7 +31,7 @@ use Config::Simple;
 sub cdot_vol_perf {
 
     my $hostname = shift;
-    my %perf_return;
+    my %perf_return = ();
 
     my $vol_api = new NaElement('volume-get-iter');
     my $tag_elem = NaElement->new( "tag" );
@@ -57,7 +57,7 @@ sub cdot_vol_perf {
         eval {  
             $vol_output = connect_filer($hostname)->invoke_elem($vol_api);
         };
-        #plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
+#plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
 
         my $vol_instances_list = $vol_output->child_get("attributes-list");
 
@@ -72,7 +72,7 @@ sub cdot_vol_perf {
                 my $vol_uuid = $vol_id_attributes->child_get_string("instance-uuid");
                 my $vol_name = $vol_id_attributes->child_get_string("name");
 
-                # ONTAP 9.2 no uuid?
+# ONTAP 9.2 no uuid?
                 if($vol_uuid){
 
                     unless($vol_name =~ m/temp__/){   
@@ -105,8 +105,8 @@ sub cdot_vol_perf {
             eval {
                 $xo = connect_filer($hostname)->invoke_elem($api);
             };
-            #plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
-    
+#plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
+
             my $instances_list = $xo->child_get("instances");
             if($instances_list){
 
@@ -121,7 +121,7 @@ sub cdot_vol_perf {
                         next;
                     }
 
-                    #plugin_log(LOG_DEBUG, "--> $vol_name");
+#plugin_log(LOG_DEBUG, "--> $vol_name");
 
                     my $counters_list = $volume->child_get("counters");
                     if($counters_list){
@@ -138,32 +138,37 @@ sub cdot_vol_perf {
                             }
                         }
 
-                   plugin_dispatch_values({
-                           plugin => 'latency_vol',
-                            type => 'netapp_vol_latency',
-                            type_instance => $vol_name,
-                            values => [ $values{read_latency}, $values{write_latency}, $values{read_ops}, $values{write_ops} ],
-                            interval => '30',
-                            host => $hostname,
-                            });
+                        unless(defined($perf_return{$vol_name})){
 
-                    plugin_dispatch_values({
-                            plugin => 'traffic_vol',
-                            type => 'disk_octets',
-                            type_instance => $vol_name,
-                            values => [ $values{read_data}, $values{write_data} ],
-                            interval => '30',
-                            host => $hostname,
-                            });
+                            $perf_return{$vol_name} = [$values{read_latency}, $values{write_latency}, $values{read_ops}, $values{write_ops}];
 
-                    plugin_dispatch_values({
-                            plugin => 'iops_vol',
-                            type => 'disk_ops',
-                            type_instance => $vol_name,
-                            values => [ $values{read_ops}, $values{write_ops} ],
-                            interval => '30',
-                            host => $hostname,
-                            });
+                            plugin_dispatch_values({
+                                    plugin => 'latency_vol',
+                                    type => 'netapp_vol_latency',
+                                    type_instance => $vol_name,
+                                    values => [ $values{read_latency}, $values{write_latency}, $values{read_ops}, $values{write_ops} ],
+                                    interval => '30',
+                                    host => $hostname,
+                                    });
+
+                            plugin_dispatch_values({
+                                    plugin => 'traffic_vol',
+                                    type => 'disk_octets',
+                                    type_instance => $vol_name,
+                                    values => [ $values{read_data}, $values{write_data} ],
+                                    interval => '30',
+                                    host => $hostname,
+                                    });
+
+                            plugin_dispatch_values({
+                                    plugin => 'iops_vol',
+                                    type => 'disk_ops',
+                                    type_instance => $vol_name,
+                                    values => [ $values{read_ops}, $values{write_ops} ],
+                                    interval => '30',
+                                    host => $hostname,
+                                    });
+                        }
 
                     }
                 }
@@ -171,7 +176,7 @@ sub cdot_vol_perf {
         }
 
         $next = $vol_output->child_get_string( "next-tag" );
-        
+
     }
     return \%perf_return;
 }

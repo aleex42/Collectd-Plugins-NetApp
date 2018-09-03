@@ -34,10 +34,19 @@ For detailed documentation and examples have a look at my Mediawiki:
     * NIC
       Network Interface Traffic
 
-    * Disk (in work)
+    * FCP
+      Fibre Channel HBA traffic
+
+    * FlashCache
+      FlashCache (also NVMe) stats
+
+    * Flash
+      FlashPool stats
+
+    * Disk
       Disk Busy per Aggregate
 
-    * Flash Pool Hit-Ratio (currently only cDOT)
+    * Flash Pool Hit-Ratio
       Hit-Ratio (read/write) for Hybrid Aggregates
 
 ## Configuration:

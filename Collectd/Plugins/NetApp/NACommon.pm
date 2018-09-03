@@ -30,8 +30,6 @@ sub connect_filer {
     my $cfg = new Config::Simple($ConfigFile);
     my %Config = $cfg->vars();
 
-    my $mode = $Config{ $hostname . '.Mode'};
-
     my ($username, $password);
 
     if($Config{ $hostname . '.Username'}){
@@ -50,10 +48,7 @@ sub connect_filer {
     $s->set_style('LOGIN');
     $s->set_timeout(10);
     $s->set_admin_user( $username, $password );
-
-    if($mode eq "cDOT"){
-        $s->set_transport_type('HTTPS');
-    }
+    $s->set_transport_type('HTTPS');
 
     return $s;
 }

@@ -124,21 +124,14 @@ sub cdot_fcp {
 
 sub fcp_module {
 
-    my ($hostname, $filer_os) = @_;
+    my $hostname = shift;
     my $starttime = time();
 
-    given ($filer_os){
-
-        when("cDOT"){
-
-            my $lif_result;
-            eval {
-                $lif_result = cdot_fcp($hostname);
-            };
-            plugin_log(LOG_DEBUG, "*DEBUG* cdot_fcp: $@") if $@;
-
-        }
-    }
+    my $lif_result;
+    eval {
+        $lif_result = cdot_fcp($hostname);
+    };
+    plugin_log(LOG_DEBUG, "*DEBUG* cdot_fcp: $@") if $@;
 
     return 1;
 }

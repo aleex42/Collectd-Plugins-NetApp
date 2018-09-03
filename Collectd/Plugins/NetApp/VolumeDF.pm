@@ -90,27 +90,6 @@ sub cdot_vol_df {
                             interval => '30',
                             host => $hostname,
                             });
-
-#                    plugin_dispatch_values({
-#                            plugin => 'df_vol',
-#                            plugin_instance => $vol_name,
-#                            type => 'df_complex',
-#                            type_instance => 'used',
-#                            values => [$used],
-#                            interval => '30',
-#                            host => $hostname,
-#                            });
-#
-#                    plugin_dispatch_values({
-#                            plugin => 'df_vol',
-#                            plugin_instance => $vol_name,
-#                            type => 'df_complex',
-#                            type_instance => 'free',
-#                            values => [$free],
-#                            interval => '30',
-#                            host => $hostname,
-#                            });
-
                     }
                 }
             }
@@ -125,74 +104,16 @@ sub cdot_vol_df {
     }
 }
 
-sub smode_vol_df {
-
-	my ($hostname) = @_;
-	my $starttime = time();
-
-	my $iterator = NaElement->new("volume-list-info");
-
-	my $output = connect_filer($hostname)->invoke_elem($iterator);
-
-	my $instances_list = $output->child_get("volumes");
-
-	if($instances_list){
-
-		my @instances = $instances_list->children_get();
-
-		foreach my $volume (@instances){
-
-			my $vol_name = $volume->child_get_string("name");
-			my $vol_free = $volume->child_get_int("size-available");
-			my $vol_used = $volume->child_get_int("size-used");
-
-			plugin_dispatch_values({
-							plugin => 'df_vol',
-							plugin_instance => $vol_name,
-							type => 'df_complex',
-							type_instance => 'free',
-							values => [$vol_free],
-							interval => '30',
-							host => $hostname,
-							time => $starttime,
-			});
-
-			plugin_dispatch_values({
-							plugin => 'df_vol',
-							plugin_instance => $vol_name,
-							type => 'df_complex',
-							type_instance => 'used',
-							values => [$vol_used],
-							interval => '30',
-							host => $hostname,
-							time => $starttime,
-			});
-		}
-	}
-}
-
 sub volume_df_module {
 
-    my ($hostname, $filer_os) = @_;
-
+    my $hostname = shift;
     my $starttime = time();
 
-    given ($filer_os){
-
-        when("cDOT"){
-
-            my $df_result;
-            eval {
-                $df_result = cdot_vol_df($hostname);
-            };
-            plugin_log(LOG_DEBUG, "*DEBUG* cdot_vol_df: $@") if $@;
-
-        }
-
-        default {
-            smode_vol_df($hostname);
-        }
-    }
+    my $df_result;
+    eval {
+        $df_result = cdot_vol_df($hostname);
+    };
+    plugin_log(LOG_DEBUG, "*DEBUG* cdot_vol_df: $@") if $@;
 
     return 1;
 }

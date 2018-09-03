@@ -135,43 +135,31 @@ sub cdot_flash {
 
 sub flash_module {
    
-    my ($hostname, $filer_os) = @_;
+    my $hostname = shift;
     my $starttime = time();
 
-    given ($filer_os){
+    my $flash_result;
+    eval {
+        $flash_result = cdot_flash($hostname);
+    };
+    plugin_log(LOG_DEBUG, "*DEBUG* cdot_flash: $@") if $@;
 
-        when("cDOT"){
+    if($flash_result){
 
-            my $flash_result;
-            eval {
-                $flash_result = cdot_flash($hostname);
-            };
-            plugin_log(LOG_DEBUG, "*DEBUG* cdot_flash: $@") if $@;
+        foreach my $aggr (keys %$flash_result){
 
-            if($flash_result){
-
-                foreach my $aggr (keys %$flash_result){
-
-                    my $aggr_value_ref = $flash_result->{$aggr};
-                    my @aggr_value = @{ $aggr_value_ref };                 
+            my $aggr_value_ref = $flash_result->{$aggr};
+            my @aggr_value = @{ $aggr_value_ref };                 
     
-                    plugin_dispatch_values({
-                            plugin => 'flash_usage',
-                            type => 'netapp_flash_usage',
-                            type_instance => $aggr,
-                            values => [@aggr_value],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-                }
-            }
-        }
-
-        default {
-
-        # do nothing
-
+            plugin_dispatch_values({
+                    plugin => 'flash_usage',
+                    type => 'netapp_flash_usage',
+                    type_instance => $aggr,
+                    values => [@aggr_value],
+                    interval => '30',
+                    host => $hostname,
+                    time => $starttime,
+                    });
         }
     }
 

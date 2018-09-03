@@ -110,79 +110,16 @@ sub cdot_cpu {
     return \%cpu_return;
 }
 
-sub smode_cpu {
-
-    my $hostname = shift;
-    my $starttime = time();
-	
-    my $api = new NaElement('perf-object-get-instances');
-
-    my $xi = new NaElement('counters');
-    $api->child_add($xi);
-    $xi->child_add_string('counter','cpu_busy');
-    $api->child_add_string('objectname','system');
-
-    my $xo;
-    eval {
-        $xo = connect_filer($hostname)->invoke_elem($api);
-    };
-    plugin_log(LOG_DEBUG, "*DEBUG* connect fail smode_cpu: $@") if $@;
-
-
-    my $instances = $xo->child_get("instances");
-    
-    if($instances){
-        my $instance_data = $instances->child_get("instance-data");
-        my $counters = $instance_data->child_get("counters");
-        if($counters){
-            my $counter_data = $counters->child_get("counter-data");
-            if($counter_data){
-                my $rounded_busy = sprintf("%.0f", $counter_data->child_get_int("value")/10000);
-
-                plugin_dispatch_values({
-                    plugin => 'cpu',
-                    plugin_instance => 'total',
-                    type => 'cpu',
-                    type_instance => 'cpu_busy',
-                    values => [$rounded_busy],
-                    interval => '30',
-                    host => $hostname,
-                    time => $starttime,
-                    });
-
-            }
-        }
-    }
-}
-
 sub cpu_module {
 
-    my ($hostname, $filer_os) = @_;
+    my $hostname = shift;
 
-    given ($filer_os){
+    my $cpu_result;
 
-        when("cDOT"){
-
-            my $cpu_result;
-
-            eval {
-                $cpu_result = cdot_cpu($hostname);
-            };
-            plugin_log(LOG_DEBUG, "*DEBUG* cdot_cpu: $@") if $@;
-
-        }
-
-        default {
-               
-            my $cpu_result;
-
-            eval {
-                $cpu_result = smode_cpu($hostname);
-            };
-            plugin_log(LOG_DEBUG, "*DEBUG* smode_cpu: $@") if $@;
-
-        }
-    }
+    eval {
+        $cpu_result = cdot_cpu($hostname);
+    };
+    plugin_log(LOG_DEBUG, "*DEBUG* cdot_cpu: $@") if $@;
 
     return 1;
 }

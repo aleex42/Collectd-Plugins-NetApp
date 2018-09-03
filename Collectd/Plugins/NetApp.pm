@@ -65,7 +65,7 @@ sub my_init {
 
 sub module_thread_func {
 
-    my ($module, $hostname, $filer_os, $volume) = @_;
+    my ($module, $hostname, $volume) = @_;
 
     my $starttime = time();
 
@@ -74,39 +74,39 @@ sub module_thread_func {
     given($module){
 
         when("CPU"){
-                cpu_module($hostname, $filer_os);
+                cpu_module($hostname);
         }
 
         when("Aggr"){
-                aggr_module($hostname, $filer_os);
+                aggr_module($hostname);
         }
 
     	when("Volume"){
-        		volume_module($hostname, $filer_os);
+        		volume_module($hostname);
     	}
 
         when("VolumeDF"){
-                volume_df_module($hostname, $filer_os);
+                volume_df_module($hostname);
         }        
 
         when("NIC"){
-            	nic_module($hostname, $filer_os);
+            	nic_module($hostname);
         }
 
         when("Disk"){
-        	disk_module($hostname, $filer_os);
+        	disk_module($hostname);
         }
 
         when("Flash"){
-                flash_module($hostname, $filer_os);
+                flash_module($hostname);
         }
 
         when("FlashCache"){
-                flashcache_module($hostname, $filer_os);
+                flashcache_module($hostname);
         }
 
         when("FCP"){
-                fcp_module($hostname, $filer_os);
+                fcp_module($hostname);
         }
 
         when("IOPS"){
@@ -139,8 +139,6 @@ sub my_get {
 
 #         plugin_log(LOG_DEBUG, "*DEBUG* hostname $hostname");
 
-        my $filer_os = $Config{ $hostname . '.Mode'};
-
         foreach my $module (@cdot_modules){
 
             my $exclude = $Config{ $hostname . '.ExcludeModules'};
@@ -151,7 +149,7 @@ sub my_get {
 
                 unless(grep(/$module/, @$exclude)){
         #           plugin_log(LOG_DEBUG, "*DEBUG* module: $module");
-        	    	push(@threads, threads->create (\&module_thread_func, $module, $hostname, $filer_os));
+        	    	push(@threads, threads->create (\&module_thread_func, $module, $hostname));
         #		    plugin_log(LOG_INFO, "*DEBUG* new thread $hostname/$module");
                 }
             }

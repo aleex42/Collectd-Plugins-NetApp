@@ -215,109 +215,22 @@ sub cdot_port {
     }
 }
 
-
-sub smode_nic {
-
-    my $hostname = shift;
-    my %nic_return;
-
-    my $in = NaElement->new("perf-object-get-instances");
-    $in->child_add_string("objectname","ifnet");
-    my $counters = NaElement->new("counters");    
-    $counters->child_add_string("counter","recv_data");
-    $counters->child_add_string("counter","send_data");
-    $in->child_add($counters);
-
-    my $out;
-    eval {
-        $out = connect_filer($hostname)->invoke_elem($in);
-    };
-    plugin_log(LOG_DEBUG, "*DEBUG* connect fail smode_nic: $@") if $@;
-
-    my $instances_list = $out->child_get("instances");
-    
-    if($instances_list){
-
-        my @instances = $instances_list->children_get();
-
-        foreach my $interface (@instances){
-
-            my $int_name = $interface->child_get_string("name");
-
-            my $counters_list = $interface->child_get("counters");
-            if($counters_list){
-                my @counters = $counters_list->children_get();
-
-                my %values = (recv_data => undef, send_data => undef);
-
-                foreach my $counter (@counters){
-
-                    my $key = $counter->child_get_string("name");
-                    if(exists $values{$key}){
-                        $values{$key} = $counter->child_get_string("value");
-                    }
-                }
-
-                $nic_return{$int_name} = [ $values{recv_data}, $values{send_data} ];
-            }
-        }
-    }
-
-    return \%nic_return;
-
-}
-
 sub nic_module {
 
-    my ($hostname, $filer_os) = @_;
+    my $hostname = shift;
     my $starttime = time();
 
-    given ($filer_os){
+    my $lif_result;
+    eval {
+        $lif_result = cdot_lif($hostname);
+    };
+    plugin_log(LOG_DEBUG, "*DEBUG* cdot_lif: $@") if $@;
 
-        when("cDOT"){
-
-            my $lif_result;
-            eval {
-                $lif_result = cdot_lif($hostname);
-            };
-            plugin_log(LOG_DEBUG, "*DEBUG* cdot_lif: $@") if $@;
-
-            my $port_result;
-            eval {
-                $port_result = cdot_port($hostname);
-            };
-            plugin_log(LOG_DEBUG, "*DEBUG* cdot_port: $@") if $@;
-
-        }
-
-        default {
-
-            my $nic_result;
-            eval {
-                $nic_result = smode_nic($hostname);
-            };
-            plugin_log(LOG_DEBUG, "*DEBUG* smode_nic: $@") if $@;
-
-            if($nic_result){
-
-                foreach my $nic (keys %$nic_result){
-
-                    my $nic_value_ref = $nic_result->{$nic};
-                    my @nic_value = @{ $nic_value_ref };
-
-                    plugin_dispatch_values({
-                            plugin => 'interface',
-                            plugin_instance => $nic,
-                            type => 'if_octets',
-                            values => [$nic_value[0], $nic_value[1]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-                }
-            }
-        }
-    }
+    my $port_result;
+    eval {
+        $port_result = cdot_port($hostname);
+    };
+    plugin_log(LOG_DEBUG, "*DEBUG* cdot_port: $@") if $@;
 
     return 1;
 }

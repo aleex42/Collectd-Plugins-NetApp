@@ -30,101 +30,6 @@ use Data::Dumper;
 
 use Config::Simple;
 
-sub smode_aggr_df {
-
-    my $hostname = shift;
-
-    my %df_return;
-    my %aggrs;
-
-    my $in = NaElement->new("aggr-space-list-info");
-    
-    my $out;
-    eval {
-        $out = connect_filer($hostname)->invoke_elem($in);
-    };
-    plugin_log(LOG_DEBUG, "*DEBUG* connect fail smode_aggr_df: $@") if $@;
-    
-    my $aggrs = $out->child_get("aggregates");
-    
-    if($aggrs){
-    
-        my @aggr_result = $aggrs->children_get();
-    
-        foreach my $aggr (@aggr_result){
-   
-            my $aggr_name = $aggr->child_get_string("aggregate-name");
-            my $aggr_used = $aggr->child_get_string("size-volume-used");
-            my $aggr_total = $aggr->child_get_string("size-nominal");
-            my $aggr_allocated = $aggr->child_get_string("size-used");
-
-            my $allocated = $aggr_allocated - $aggr_used;
-            my $aggr_free = $aggr_total - $aggr_used - $allocated;
- 
-            $df_return{$aggr_name} = [ $aggr_used, $aggr_free, $allocated ];
-    
-        }
-    
-        return \%df_return;
-    } else {
-        return undef;
-    }
-}
-
-sub smode_aggr_iops {
-
-    my $hostname = shift;
-
-    my %iops_return;
-
-    my $in = NaElement->new("perf-object-get-instances");
-    $in->child_add_string("objectname","aggregate");
-    my $counters = NaElement->new("counters");
-    $counters->child_add_string("counter","user_reads");
-    $counters->child_add_string("counter","user_writes");
-    $in->child_add($counters);
-    
-    my $out;
-    eval {
-        $out = connect_filer($hostname)->invoke_elem($in);
-    };
-    plugin_log(LOG_DEBUG, "*DEBUG* connect fail smode_aggr_iops: $@") if $@;
-
-    my $instances_list = $out->child_get("instances");
-    if($instances_list){
-
-        my @instances = $instances_list->children_get();
-
-        foreach my $aggr (@instances){
-
-            my $aggr_name = $aggr->child_get_string("name");
-
-            my $counters_list = $aggr->child_get("counters");
-            if($counters_list){
-
-                my @counters =  $counters_list->children_get();
-
-                my %values = (user_reads => undef, user_writes => undef );
-
-                foreach my $counter (@counters){
-
-                    my $key = $counter->child_get_string("name");
-                    if(exists $values{$key}){
-                        $values{$key} = $counter->child_get_string("value");
-                    }
-                }
-
-                $iops_return{$aggr_name} = [ $values{user_reads}, $values{user_writes} ];
-            }
-        }
-
-        return \%iops_return;
-
-    } else {
-        return undef;
-    }
-}
-
 sub cdot_aggr_df {
 
     my $hostname = shift;
@@ -327,168 +232,83 @@ sub cdot_aggr_df_reserved {
 
 sub aggr_module {
 
-    my ($hostname, $filer_os) = @_;
+    my $hostname = shift;
     my $starttime = time();
 
-    given ($filer_os){
+    my $aggr_df_result;
 
-        when("cDOT"){
+    eval {
+        $aggr_df_result = cdot_aggr_df($hostname);
+    };            
+    plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df: $@") if $@;
 
-            my $aggr_df_result;
+    if($aggr_df_result){
 
-            eval {
-                $aggr_df_result = cdot_aggr_df($hostname);
-            };            
-            plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df: $@") if $@;
- 
-            if($aggr_df_result){
+        foreach my $aggr (keys %$aggr_df_result){
 
-                foreach my $aggr (keys %$aggr_df_result){
+            my $aggr_value_ref = $aggr_df_result->{$aggr};
+            my @aggr_value = @{ $aggr_value_ref };
 
-                    my $aggr_value_ref = $aggr_df_result->{$aggr};
-                    my @aggr_value = @{ $aggr_value_ref };
+            plugin_dispatch_values({
+                    plugin => 'df_aggr',
+                    plugin_instance => $aggr,
+                    type => 'df_complex',
+                    type_instance => 'used',
+                    values => [$aggr_value[0]],
+                    interval => '30',
+                    host => $hostname,
+                    time => $starttime,
+                    });
 
-                    plugin_dispatch_values({
-                            plugin => 'df_aggr',
-                            plugin_instance => $aggr,
-                            type => 'df_complex',
-                            type_instance => 'used',
-                            values => [$aggr_value[0]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
+            plugin_dispatch_values({
+                    plugin => 'df_aggr',
+                    plugin_instance => $aggr,
+                    type => 'df_complex',
+                    type_instance => 'free',
+                    values => [$aggr_value[1]],
+                    interval => '30',
+                    host => $hostname,
+                    time => $starttime,
+                    });
 
-                    plugin_dispatch_values({
-                            plugin => 'df_aggr',
-                            plugin_instance => $aggr,
-                            type => 'df_complex',
-                            type_instance => 'free',
-                            values => [$aggr_value[1]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
+            unless(($aggr eq "mass") || ($aggr eq "performance") || ($aggr eq "ultra")){
 
-                    unless(($aggr eq "mass") || ($aggr eq "performance") || ($aggr eq "ultra")){
-
-                        plugin_dispatch_values({
-                            plugin => 'iops_aggr',
-                            type => 'disk_ops',
-                            type_instance => $aggr,
-                            values => [$aggr_value[2], $aggr_value[3]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-                    }
-                }
-            }
-
-            my $aggr_df_reserved;
-
-            eval {
-                $aggr_df_reserved = cdot_aggr_df_reserved($hostname);
-            };
-            plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df_reserved: $@") if $@;
-
-            if($aggr_df_reserved){
-
-                foreach my $aggr (keys %$aggr_df_reserved){
-
-                    my $aggr_value = $aggr_df_reserved->{$aggr};
-
-                    plugin_dispatch_values({
-                            plugin => 'df_aggr_reserved',
-                            plugin_instance => $aggr,
-                            type => 'df_complex',
-                            type_instance => 'used',
-                            values => [$aggr_value],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-                }
+                plugin_dispatch_values({
+                        plugin => 'iops_aggr',
+                        type => 'disk_ops',
+                        type_instance => $aggr,
+                        values => [$aggr_value[2], $aggr_value[3]],
+                        interval => '30',
+                        host => $hostname,
+                        time => $starttime,
+                        });
             }
         }
+    }
 
-        default {
+    my $aggr_df_reserved;
 
-            my $aggr_iops_result;
+    eval {
+        $aggr_df_reserved = cdot_aggr_df_reserved($hostname);
+    };
+    plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df_reserved: $@") if $@;
 
-            eval {
-                $aggr_iops_result = smode_aggr_iops($hostname);
-            };
-            plugin_log(LOG_DEBUG, "*DEBUG* smode_aggr_iops: $@") if $@;
+    if($aggr_df_reserved){
 
-            if($aggr_iops_result){
+        foreach my $aggr (keys %$aggr_df_reserved){
 
-                foreach my $aggr (keys %$aggr_iops_result){
+            my $aggr_value = $aggr_df_reserved->{$aggr};
 
-                    my $aggr_value_ref = $aggr_iops_result->{$aggr};
-                    my @aggr_value = @{ $aggr_value_ref };
-
-                    plugin_dispatch_values({
-                            plugin => 'iops_aggr',
-                            type => 'disk_ops',
-                            type_instance => $aggr,
-                            values => [$aggr_value[0], $aggr_value[1]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-                }
-            }
-
-            my $aggr_df_result;
-
-            eval {
-                $aggr_df_result = smode_aggr_df($hostname);
-            };
-            plugin_log(LOG_DEBUG, "*DEBUG* smode_aggr_df: $@") if $@;
-
-            if($aggr_df_result){
-
-                foreach my $aggr (keys %$aggr_df_result){
-
-                    my $aggr_value_ref = $aggr_df_result->{$aggr};
-                    my @aggr_value = @{ $aggr_value_ref };
-
-                    plugin_dispatch_values({
-                            plugin => 'df_aggr',
-                            plugin_instance => $aggr,
-                            type => 'df_complex',
-                            type_instance => 'used',
-                            values => [$aggr_value[0]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'df_aggr',
-                            plugin_instance => $aggr,
-                            type => 'df_complex',
-                            type_instance => 'free',
-                            values => [$aggr_value[1]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-
-                    plugin_dispatch_values({
-                            plugin => 'df_aggr',
-                            plugin_instance => $aggr,
-                            type => 'df_complex',
-                            type_instance => 'allocated',
-                            values => [$aggr_value[2]],
-                            interval => '30',
-                            host => $hostname,
-                            time => $starttime,
-                            });
-
-                }
-            }
+            plugin_dispatch_values({
+                    plugin => 'df_aggr_reserved',
+                    plugin_instance => $aggr,
+                    type => 'df_complex',
+                    type_instance => 'used',
+                    values => [$aggr_value],
+                    interval => '30',
+                    host => $hostname,
+                    time => $starttime,
+                    });
         }
     }
 

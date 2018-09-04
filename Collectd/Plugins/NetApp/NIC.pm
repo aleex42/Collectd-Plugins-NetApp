@@ -105,15 +105,17 @@ sub nic_module {
                         }
                     }
 
-                    plugin_dispatch_values({
-                            plugin => 'interface_lif',
-                            type => 'if_octets',
-                            type_instance => "$nic_name $nic_uuid",
-                            values => [ $values{recv_data}, $values{sent_data} ],
-                            interval => '30',
-                            host => $hostname,
-                    });
+                    unless(($values{recv_data} eq "0") && ($values{sent_data} eq "0")){
 
+                        plugin_dispatch_values({
+                                plugin => 'interface_lif',
+                                type => 'if_octets',
+                                type_instance => "$nic_name $nic_uuid",
+                                values => [ $values{recv_data}, $values{sent_data} ],
+                                interval => '30',
+                                host => $hostname,
+                        });
+                    }
                 }
             }
         }
@@ -185,14 +187,17 @@ sub nic_module {
                         }
                     }
 
-                    plugin_dispatch_values({
-                            plugin => 'interface_port',
-                            type => 'if_octets',
-                            type_instance => $nic_name,
-                            values => [ $values{rx_total_bytes}, $values{tx_total_bytes} ],
-                            interval => '30',
-                            host => $hostname,
-                            });
+                    unless(($values{rx_total_bytes} eq "0") && ($values{tx_total_bytes} eq "0")){
+
+                        plugin_dispatch_values({
+                                plugin => 'interface_port',
+                                type => 'if_octets',
+                                type_instance => $nic_name,
+                                values => [ $values{rx_total_bytes}, $values{tx_total_bytes} ],
+                                interval => '30',
+                                host => $hostname,
+                                });
+                    }
                 }
             }
         }

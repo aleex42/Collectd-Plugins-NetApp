@@ -142,34 +142,42 @@ sub cdot_vol_perf {
 
                             $perf_return{$vol_name} = [$values{read_latency}, $values{write_latency}, $values{read_ops}, $values{write_ops}];
 
-                            plugin_dispatch_values({
-                                    plugin => 'latency_vol',
-                                    type => 'netapp_vol_latency',
-                                    type_instance => $vol_name,
-                                    values => [ $values{read_latency}, $values{write_latency}, $values{read_ops}, $values{write_ops} ],
-                                    interval => '30',
-                                    host => $hostname,
-                                    });
+                            unless(($values{read_latency} eq "0") && ($values{write_latency} eq "0") && ($values{read_ops} eq "0") && ($values{write_ops} eq "0")){
 
-                            plugin_dispatch_values({
-                                    plugin => 'traffic_vol',
-                                    type => 'disk_octets',
-                                    type_instance => $vol_name,
-                                    values => [ $values{read_data}, $values{write_data} ],
-                                    interval => '30',
-                                    host => $hostname,
-                                    });
+                                plugin_dispatch_values({
+                                        plugin => 'latency_vol',
+                                        type => 'netapp_vol_latency',
+                                        type_instance => $vol_name,
+                                        values => [ $values{read_latency}, $values{write_latency}, $values{read_ops}, $values{write_ops} ],
+                                        interval => '30',
+                                        host => $hostname,
+                                        });
+                            }
 
-                            plugin_dispatch_values({
-                                    plugin => 'iops_vol',
-                                    type => 'disk_ops',
-                                    type_instance => $vol_name,
-                                    values => [ $values{read_ops}, $values{write_ops} ],
-                                    interval => '30',
-                                    host => $hostname,
-                                    });
+                            unless(($values{read_data} eq "0") && ($values{write_data} eq "0")){
+
+                                plugin_dispatch_values({
+                                        plugin => 'traffic_vol',
+                                        type => 'disk_octets',
+                                        type_instance => $vol_name,
+                                        values => [ $values{read_data}, $values{write_data} ],
+                                        interval => '30',
+                                        host => $hostname,
+                                        });
+                            }
+
+                            unless(($values{read_ops} eq "0") && ($values{write_ops} eq "0")){
+
+                                plugin_dispatch_values({
+                                        plugin => 'iops_vol',
+                                        type => 'disk_ops',
+                                        type_instance => $vol_name,
+                                        values => [ $values{read_ops}, $values{write_ops} ],
+                                        interval => '30',
+                                        host => $hostname,
+                                        }); 
+                            }
                         }
-
                     }
                 }
             }

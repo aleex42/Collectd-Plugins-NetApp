@@ -83,14 +83,18 @@ sub cdot_vol_df {
 
                             $df_return{$vol_name} = [ $used, $free ];
 
-                            plugin_dispatch_values({
-                                plugin => 'df_vol',
-                                type => 'df',
-                                type_instance => $vol_name,
-                                values => [$used, $free],
-                                interval => '30',
-                                host => $hostname,
-                            });
+                            unless(($used eq "0") && ($free eq "0")){
+
+                                plugin_dispatch_values({
+                                    plugin => 'df_vol',
+                                    type => 'df',
+                                    type_instance => $vol_name,
+                                    values => [$used, $free],
+                                    interval => '30',
+                                    host => $hostname,
+                                });
+
+                            }
                         }
                     }
                 }

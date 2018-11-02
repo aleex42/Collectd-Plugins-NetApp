@@ -28,7 +28,7 @@ use NaElement;
 
 use Config::Simple;
 
-sub cdot_fcp {
+sub fcp_module {
 
     my $hostname = shift;
     my %nic_return;
@@ -101,7 +101,6 @@ sub cdot_fcp {
                             $values{$key} = $counter->child_get_string("value");
                         }
                     }
-#                    $nic_return{$nic_name} = [ $values{read_data}, $values{write_data} ];
 
                     plugin_dispatch_values({
                             plugin => 'fcp_lif',
@@ -110,29 +109,11 @@ sub cdot_fcp {
                             values => [ $values{read_data}, $values{write_data}  ],
                             interval => '30',
                             host => $hostname,
-                            #time => $starttime,
                             });
-                    
                 }
             }
         }
-        return \%nic_return;
-    } else {
-        return undef;
     }
-}
-
-sub fcp_module {
-
-    my $hostname = shift;
-    my $starttime = time();
-
-    my $lif_result;
-    eval {
-        $lif_result = cdot_fcp($hostname);
-    };
-    plugin_log(LOG_DEBUG, "*DEBUG* cdot_fcp: $@") if $@;
-
     return 1;
 }
 

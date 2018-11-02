@@ -193,19 +193,22 @@ sub disk_module {
 
         foreach my $disk_id (@{$disk_list{$aggr}}){
 
-            my @disk_perf_values = split(/,/, $disk_perf_values{$disk_id});
-            my $disk_busy = $disk_perf_values[0];
-            my $base_for_disk_busy = $disk_perf_values[1];
+            if($disk_perf_values{$disk_id}){
 
-            if ($max_percent{$aggr}){
-                my $ref = $max_percent{$aggr};
-                my @busy_value = @{ $ref };
+                my @disk_perf_values = split(/,/, $disk_perf_values{$disk_id});
+                my $disk_busy = $disk_perf_values[0];
+                my $base_for_disk_busy = $disk_perf_values[1];
 
-                if ($disk_busy > $busy_value[0]){
+                if ($max_percent{$aggr}){
+                    my $ref = $max_percent{$aggr};
+                    my @busy_value = @{ $ref };
+    
+                    if ($disk_busy > $busy_value[0]){
+                        $max_percent{$aggr} = [ $disk_busy, $base_for_disk_busy ];
+                    }
+                } else {
                     $max_percent{$aggr} = [ $disk_busy, $base_for_disk_busy ];
                 }
-            } else {
-                $max_percent{$aggr} = [ $disk_busy, $base_for_disk_busy ];
             }
         }
     
@@ -213,14 +216,13 @@ sub disk_module {
         my @aggr_value = @{ $aggr_value_ref };
 
         plugin_dispatch_values({
-                plugin => 'disk_busy',
-                type => 'netapp_disk_busy',
-                type_instance => $aggr,
-                values => [ @aggr_value ],
-                interval => '30',
-                host => $hostname,
+                    plugin => 'disk_busy',
+                    type => 'netapp_disk_busy',
+                    type_instance => $aggr,
+                    values => [ @aggr_value ],
+                    interval => '30',
+                    host => $hostname,
         });
-
     }
 
     return 1;

@@ -107,7 +107,6 @@ sub cpu_module {
             }
         }
     }
-#    return \%cpu_return;
     return 1;
 }
 

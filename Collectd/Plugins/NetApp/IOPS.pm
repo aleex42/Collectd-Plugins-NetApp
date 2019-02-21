@@ -231,12 +231,16 @@ sub iops_module {
         my $output = connect_filer($hostname)->invoke_elem($iterator);
 
         my $heads = $output->child_get("attributes-list");
-        my @result = $heads->children_get();
 
-        foreach my $pg (@result){
-            push(@qos_groups, $pg->child_get_string("node-uuid"));
+        if($heads){
+
+            my @result = $heads->children_get();
+
+            foreach my $pg (@result){
+                push(@qos_groups, $pg->child_get_string("node-uuid"));
+            }
+            $next = $output->child_get_string("next-tag");
         }
-        $next = $output->child_get_string("next-tag");
     }
 
     my $in = NaElement->new("perf-object-get-instances"); 

@@ -47,6 +47,10 @@ sub cdot_vol_df {
     $xi3->child_add_string('state','<state>');
     my $xi4 = new NaElement('volume-id-attributes');
     $xi4->child_add_string('name','name');
+    my $xi5 = new NaElement( "volume-inode-attributes" );
+    $xi5->child_add_string( "files-total", "<files-total>" );
+    $xi5->child_add_string( "files-used", "<files-used>" );
+    $xi1->child_add($xi5);
     $api->child_add_string('max-records','1000');
 
     my $output;
@@ -95,6 +99,40 @@ sub cdot_vol_df {
                                 });
 
                             }
+                        
+                        my $inode_info = $vol->child_get( "volume-inode-attributes" );
+
+#                        if ($inode_info) {
+
+                            my $inode_used = $inode_info->child_get_int( "files-used" );
+                            my $inode_total = $inode_info->child_get_int( "files-total" );
+                            my $inode_free = $inode_total - $inode_used;
+
+                            plugin_dispatch_values({
+                                    plugin => 'df_inodes',
+                                    plugin_instance => $vol_name,
+                                    type => 'df_inodes',
+                                    type_instance => 'used',
+                                    values => [$inode_used],
+                                    interval => '30',
+                                    host => $hostname,
+                                    #time => $starttime,
+                             });
+
+                            plugin_dispatch_values({
+                                    plugin => 'df_inodes',
+                                    plugin_instance => $vol_name,
+                                    type => 'df_inodes',
+                                    type_instance => 'free',
+                                    values => [$inode_free],
+                                    interval => '30',
+                                    host => $hostname,
+                                    #time => $starttime,
+                             }); 
+
+                            plugin_log(LOG_INFO, "*DEBUG* $hostname: inodes debug: $inode_used / $inode_free");
+
+#                            }
                         }
                     }
                 }

@@ -102,7 +102,7 @@ sub cdot_vol_df {
                         
                         my $inode_info = $vol->child_get( "volume-inode-attributes" );
 
-#                        if ($inode_info) {
+                        if ($inode_info) {
 
                             my $inode_used = $inode_info->child_get_int( "files-used" );
                             my $inode_total = $inode_info->child_get_int( "files-total" );
@@ -130,9 +130,7 @@ sub cdot_vol_df {
                                     #time => $starttime,
                              }); 
 
-                            plugin_log(LOG_INFO, "*DEBUG* $hostname: inodes debug: $inode_used / $inode_free");
-
-#                            }
+                            }
                         }
                     }
                 }

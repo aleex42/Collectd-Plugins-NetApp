@@ -39,7 +39,7 @@ sub flashcache_module {
     eval {
         $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "ext_cache_obj");
     };
-    plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_flashcache: $@") if $@;
+    plugin_log(LOG_INFO, "*DEBUG* connect fail cdot_flashcache: $@") if $@;
 
     my $nics = $output->child_get("attributes-list");
 
@@ -71,7 +71,7 @@ sub flashcache_module {
         eval {
             $xo = connect_filer($hostname)->invoke_elem($api);
         };
-        plugin_log(LOG_DEBUG, "*DEBUG* connect fail flashcache: $@") if $@;
+        plugin_log(LOG_INFO, "*DEBUG* connect fail flashcache: $@") if $@;
 
         my $instances = $xo->child_get("instances");
         if($instances){
@@ -100,7 +100,7 @@ sub flashcache_module {
 
                     my $percent = $values{hit_percent}/$values{accesses}*100;
 
-                    #plugin_log(LOG_DEBUG, "*DEBUG* flashcache: $nic_name: $percent");
+                    #plugin_log(LOG_INFO, "*DEBUG* flashcache: $nic_name: $percent");
 
                     plugin_dispatch_values({
                             plugin => 'flashcache',
@@ -116,7 +116,7 @@ sub flashcache_module {
             }
         }
     } else {
-        plugin_log(LOG_DEBUG, "*DEBUG* no flashcache found on $hostname");
+        plugin_log(LOG_INFO, "*DEBUG* no flashcache found on $hostname");
         return undef;
     }
 

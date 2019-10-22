@@ -47,7 +47,11 @@ sub iops_module {
         }
 
         $iterator->child_add_string("max-records", 100);
-        my $output = connect_filer($hostname)->invoke_elem($iterator);
+        my $output;
+        eval {
+            $output = connect_filer($hostname)->invoke_elem($iterator);
+        };
+        plugin_log(LOG_INFO, "*DEBUG* connect filer: $@") if $@;
 
         my $heads = $output->child_get("attributes-list");
         if($heads){
@@ -75,7 +79,11 @@ sub iops_module {
         $counters->child_add_string("counter","system_ops");
         $counters->child_add_string("counter","write_ops");
 
-        my $xo = connect_filer($hostname)->invoke_elem($in);
+        my $xo;
+        eval { 
+            $xo = connect_filer($hostname)->invoke_elem($in);
+        };
+        plugin_log(LOG_INFO, "*DEBUG* connect filer: $@") if $@;
 
         my $instances = $xo->child_get("instances");
         if($instances){
@@ -153,7 +161,7 @@ sub iops_module {
     foreach my $proto (@protocols){
 
         my $in = NaElement->new("perf-object-get-instances"); # werte holen
-            $in->child_add_string("objectname","$proto:node");
+        $in->child_add_string("objectname","$proto:node");
 
         my $xi1 = NaElement->new("instance-uuids");
         $in->child_add($xi1);
@@ -164,8 +172,11 @@ sub iops_module {
         $in->child_add($counters);
         $counters->child_add_string("counter","${proto}_ops");
 
-        my $xo = connect_filer($hostname)->invoke_elem($in);
-
+        my $xo;
+        eval {
+            $xo = connect_filer($hostname)->invoke_elem($in);
+        };
+        plugin_log(LOG_INFO, "*DEBUG* connect filer: $@") if $@;
         my %node_sum;
 
         my $instances = $xo->child_get("instances");
@@ -227,8 +238,13 @@ sub iops_module {
             $tag_elem->set_content($next);
         }
 
-        $iterator->child_add_string("max-records", 100);
-        my $output = connect_filer($hostname)->invoke_elem($iterator);
+        $iterator->child_add_string("max-records", 500);
+
+        my $output;
+        eval {
+            $output = connect_filer($hostname)->invoke_elem($iterator);
+        };
+        plugin_log(LOG_INFO, "*DEBUG* connect filer: $@") if $@;
 
         my $heads = $output->child_get("attributes-list");
 
@@ -256,7 +272,11 @@ sub iops_module {
     $counters->child_add_string("counter","read_ops");
     $counters->child_add_string("counter","write_ops");
 
-    my $xo = connect_filer($hostname)->invoke_elem($in);
+    my $xo;
+    eval {
+        $xo = connect_filer($hostname)->invoke_elem($in);
+    };
+    plugin_log(LOG_INFO, "*DEBUG* connect filer: $@") if $@;
 
     my $instances = $xo->child_get("instances");
     if($instances){

@@ -27,26 +27,31 @@ sub connect_filer {
     my $hostname = shift;
 
     my $ConfigFile = "/etc/collectd/netapp.ini";
+    my $DefaultsConfigFile = "/etc/collectd/defaults.ini";
+
     my $cfg = new Config::Simple($ConfigFile);
+    my $defaults_config = new Config::Simple($DefaultsConfigFile);
+
     my %Config = $cfg->vars();
+    my %DefaultConfig = $defaults_config->vars();
 
     my ($username, $password);
 
     if($Config{ $hostname . '.Username'}){
         $username = $Config{ $hostname . '.Username'};
     } else { 
-        $username = $Config{ 'Default.Username'};
+        $username = $DefaultConfig{ 'Default.Username'};
     }
 
     if($Config{ $hostname . '.Password'}){
         $password = $Config{ $hostname . '.Password'};
     } else {
-        $password = $Config{ 'Default.Password'}
+        $password = $DefaultConfig{ 'Default.Password'}
     }
 
     my $s = NaServer->new( $hostname, 1, 3 );
     $s->set_style('LOGIN');
-    $s->set_timeout(10);
+    $s->set_timeout(20);
     $s->set_admin_user( $username, $password );
     $s->set_transport_type('HTTPS');
 

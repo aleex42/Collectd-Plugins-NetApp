@@ -42,7 +42,13 @@ sub cdot_aggr_df {
     $xi->child_add($xi1);
     $xi1->child_add_string('uuid','<uuid>');
     $api->child_add_string('objectname','aggregate');
-    my $aggr_output = connect_filer($hostname)->invoke_elem($api);
+
+    my $aggr_output;
+    eval {
+        $aggr_output = connect_filer($hostname)->invoke_elem($api);
+    };
+    plugin_log(LOG_INFO, "*DEBUG* connect filer: $@") if $@;
+
 
     my $in = NaElement->new("perf-object-get-instances");
     $in->child_add_string("objectname","aggregate");
@@ -73,7 +79,7 @@ sub cdot_aggr_df {
         eval {
             $out = connect_filer($hostname)->invoke_elem($in);
         };
-        plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df") if $@;
+        plugin_log(LOG_INFO, "*DEBUG* cdot_aggr_df") if $@;
     
         my $instances_list = $out->child_get("instances");
         if($instances_list){
@@ -136,11 +142,11 @@ sub cdot_aggr_df {
             return \%df_return;
 
         } else {
-            plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df no aggr instance found: $hostname");
+            plugin_log(LOG_INFO, "*DEBUG* cdot_aggr_df no aggr instance found: $hostname");
             return undef;
         }
     } else {
-        plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df no aggregates found: $hostname");
+        plugin_log(LOG_INFO, "*DEBUG* cdot_aggr_df no aggregates found: $hostname");
         return undef;
     }
 }
@@ -168,7 +174,11 @@ sub cdot_aggr_df_reserved {
     $xi4->child_add_string('containing-aggregate-name','<containing-aggregate-name>');
     $api->child_add_string('max-records','10000');
 
-    my $output = connect_filer($hostname)->invoke_elem($api);
+   my $output;
+   eval {
+       $output = connect_filer($hostname)->invoke_elem($api);
+   };
+   plugin_log(LOG_INFO, "*DEBUG* connect filer: $@") if $@;
 
     my $volumes = $output->child_get("attributes-list");
 
@@ -205,12 +215,15 @@ sub cdot_aggr_df_reserved {
                             $aggr_df{$aggr} = $total;
                         }
 
-                        if(($aggr =~ m/ata/) || ($aggr =~ m/mass/)){
-                            $mass_total += $total;
-                        } elsif(($aggr =~ m/ssd/) || ($aggr =~ m/ultra/)){
-                            $ultra_total += $total;
-                        } elsif(($aggr =~ m/sas/) || ($aggr =~ m/performance/)){
-                            $performance_total += $total;
+                        unless($aggr =~ m/aggr0_/){
+
+                            if(($aggr =~ m/ata/) || ($aggr =~ m/mass/)){
+                                $mass_total += $total;
+                            } elsif(($aggr =~ m/ssd/) || ($aggr =~ m/ultra/)){
+                                $ultra_total += $total;
+                            } elsif(($aggr =~ m/sas/) || ($aggr =~ m/performance/)){
+                                $performance_total += $total;
+                            }
                         }
                     }
                 }
@@ -240,7 +253,7 @@ sub aggr_module {
     eval {
         $aggr_df_result = cdot_aggr_df($hostname);
     };            
-    plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df: $@") if $@;
+    plugin_log(LOG_INFO, "*DEBUG* cdot_aggr_df: $@") if $@;
 
     if($aggr_df_result){
 
@@ -248,6 +261,10 @@ sub aggr_module {
 
             my $aggr_value_ref = $aggr_df_result->{$aggr};
             my @aggr_value = @{ $aggr_value_ref };
+
+            unless($aggr_value[0] eq "0"){
+
+            plugin_log(LOG_INFO, "*DEBUG* $aggr_value[0]");
 
             plugin_dispatch_values({
                     plugin => 'df_aggr',
@@ -259,6 +276,22 @@ sub aggr_module {
                     host => $hostname,
                     time => $starttime,
                     });
+
+            } else {
+
+            plugin_dispatch_values({
+                    plugin => 'df_aggr',
+                    plugin_instance => $aggr,
+                    type => 'df_complex',
+                    type_instance => 'used',
+                    values => ['U'],
+                    interval => '30',
+                    host => $hostname,
+                    time => $starttime,
+                    });
+
+            }
+
 
             plugin_dispatch_values({
                     plugin => 'df_aggr',
@@ -291,13 +324,18 @@ sub aggr_module {
     eval {
         $aggr_df_reserved = cdot_aggr_df_reserved($hostname);
     };
-    plugin_log(LOG_DEBUG, "*DEBUG* cdot_aggr_df_reserved: $@") if $@;
+    plugin_log(LOG_INFO, "*DEBUG* cdot_aggr_df_reserved: $@") if $@;
 
     if($aggr_df_reserved){
 
         foreach my $aggr (keys %$aggr_df_reserved){
 
             my $aggr_value = $aggr_df_reserved->{$aggr};
+
+
+            plugin_log(LOG_INFO, "*DEBUG* aggr_reserv: $aggr_value");
+
+            unless($aggr_value eq "0"){
 
             plugin_dispatch_values({
                     plugin => 'df_aggr_reserved',
@@ -309,6 +347,8 @@ sub aggr_module {
                     host => $hostname,
                     time => $starttime,
                     });
+
+            }
         }
     }
 

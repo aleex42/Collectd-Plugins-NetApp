@@ -40,7 +40,7 @@ sub cpu_module {
     eval {
         $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "processor:node");
     };
-    plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_cpu: $@") if $@;
+    plugin_log(LOG_INFO, "*DEBUG* connect fail cdot_cpu: $@") if $@;
 
     if($output){
         my $nodes = $output->child_get("attributes-list");
@@ -68,7 +68,11 @@ sub cpu_module {
                 $xi1->child_add_string('instance-uuid',$node_uuid);
                 $api->child_add_string('objectname','processor:node');
 
-                my $xo = connect_filer($hostname)->invoke_elem($api);
+                my $xo;
+                eval {
+                    $xo = connect_filer($hostname)->invoke_elem($api);
+                };
+                plugin_log(LOG_INFO, "*DEBUG* connect filer: $@") if $@;
 
                 my $instances = $xo->child_get("instances");
 

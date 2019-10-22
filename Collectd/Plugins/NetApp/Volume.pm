@@ -57,7 +57,7 @@ sub cdot_vol_perf {
         eval {  
             $vol_output = connect_filer($hostname)->invoke_elem($vol_api);
         };
-#plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
+#plugin_log(LOG_INFO, "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
 
         my $vol_instances_list = $vol_output->child_get("attributes-list");
 
@@ -105,7 +105,7 @@ sub cdot_vol_perf {
             eval {
                 $xo = connect_filer($hostname)->invoke_elem($api);
             };
-#plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
+            plugin_log(LOG_INFO, "*DEBUG* connect fail cdot_vol_perf: $@") if $@;
 
             my $instances_list = $xo->child_get("instances");
             if($instances_list){
@@ -121,7 +121,7 @@ sub cdot_vol_perf {
                         next;
                     }
 
-#plugin_log(LOG_DEBUG, "--> $vol_name");
+#plugin_log(LOG_INFO, "--> $vol_name");
 
                     my $counters_list = $volume->child_get("counters");
                     if($counters_list){
@@ -198,7 +198,7 @@ sub volume_module {
     eval {
         $perf_result = cdot_vol_perf($hostname);
     };
-    plugin_log(LOG_DEBUG, "*DEBUG* cdot_vol_perf: $@") if $@;
+    plugin_log(LOG_INFO, "*DEBUG* cdot_vol_perf: $@") if $@;
 
     return 1;
 }

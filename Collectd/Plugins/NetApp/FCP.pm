@@ -38,7 +38,7 @@ sub fcp_module {
     eval {
         $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "fcp_lif");
     };
-    plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_fcp: $@") if $@;
+    plugin_log(LOG_INFO, "*DEBUG* connect fail cdot_fcp: $@") if $@;
 
     my $nics = $output->child_get("attributes-list");
 
@@ -74,7 +74,7 @@ sub fcp_module {
         eval {
             $xo = connect_filer($hostname)->invoke_elem($api);
         };
-        plugin_log(LOG_DEBUG, "*DEBUG* connect fail fcp nics: $@") if $@;
+        plugin_log(LOG_INFO, "*DEBUG* connect fail fcp nics: $@") if $@;
 
         my $instances = $xo->child_get("instances");
         if($instances){
@@ -85,7 +85,7 @@ sub fcp_module {
 
                 my $nic_name = $nic->child_get_string("name");
 
-                #plugin_log(LOG_DEBUG, "--> $nic_name");
+                #plugin_log(LOG_INFO, "--> $nic_name");
 
                 my $counters = $nic->child_get("counters");
                 if($counters){

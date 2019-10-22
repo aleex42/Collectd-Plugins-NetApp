@@ -38,7 +38,7 @@ sub nic_module {
     eval {
         $output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "lif");
     };
-    plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_lif: $@") if $@;
+    plugin_log(LOG_INFO, "*DEBUG* connect fail cdot_lif: $@") if $@;
 
     my $nics = $output->child_get("attributes-list");
 
@@ -75,7 +75,7 @@ sub nic_module {
         eval {
             $xo = connect_filer($hostname)->invoke_elem($api);
         };
-        plugin_log(LOG_DEBUG, "*DEBUG* connect fail nics: $@") if $@;
+        plugin_log(LOG_INFO, "*DEBUG* connect fail nics: $@") if $@;
 
         my $instances = $xo->child_get("instances");
         if($instances){
@@ -87,7 +87,7 @@ sub nic_module {
                 my $nic_name = $nic->child_get_string("name");
                 my $nic_uuid = $nic->child_get_string("uuid");
 
-                #plugin_log(LOG_DEBUG, "--> $nic_name");
+                #plugin_log(LOG_INFO, "--> $nic_name");
 
                 my $counters = $nic->child_get("counters");
                 if($counters){
@@ -128,7 +128,7 @@ sub nic_module {
     eval {
         $port_output = connect_filer($hostname)->invoke("perf-object-instance-list-info-iter", "objectname", "nic_common");
     };
-    plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_port: $@") if $@;
+    plugin_log(LOG_INFO, "*DEBUG* connect fail cdot_port: $@") if $@;
 
     my $port_nics = $port_output->child_get("attributes-list");
 
@@ -160,7 +160,7 @@ sub nic_module {
         eval {
             $xo = connect_filer($hostname)->invoke_elem($api);
         }; 
-        plugin_log(LOG_DEBUG, "*DEBUG* connect fail cdot_port: $@") if $@;
+        plugin_log(LOG_INFO, "*DEBUG* connect fail cdot_port: $@") if $@;
 
         my $instances = $xo->child_get("instances");
         if($instances){

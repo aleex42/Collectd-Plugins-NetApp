@@ -138,11 +138,7 @@ sub my_get {
 
     foreach my $hostname (@hosts)  {
 
-        # ignore default config
-        next if $hostname eq "Default";
-
         foreach my $module (@cdot_modules){
-
             my $exclude = $Config{ $hostname . '.ExcludeModules'};
 
             if($exclude){
@@ -150,9 +146,9 @@ sub my_get {
                 $exclude=[$exclude] unless(ref($exclude) eq 'ARRAY');
 
                 unless(grep(/$module/, @$exclude)){
-        #           plugin_log(LOG_DEBUG, "*DEBUG* module: $module");
-        	    	push(@threads, threads->create (\&module_thread_func, $module, $hostname));
-#        		    plugin_log(LOG_INFO, "*DEBUG* new thread $hostname/$module");
+                    my $thr = threads->create (\&module_thread_func, $module, $hostname);
+                    push(@threads, $thr);
+           		    plugin_log(LOG_INFO, "*DEBUG* new thread $hostname/$module: ".$thr->tid());
                 }
             }
         }
@@ -162,11 +158,13 @@ sub my_get {
 
     plugin_log(LOG_INFO, "*DEBUG* DETACHING ". threads->list(threads::joinable));
     foreach (threads->list(threads::joinable)) {
+        plugin_log(LOG_INFO, "*DEBUG* joined finished trhead ".$_->tid());
         $_->join();
     }
 
     plugin_log(LOG_INFO, "*DEBUG* STILL RUNNING ". threads->list(threads::running));
     foreach (threads->list(threads::running)) {
+        plugin_log(LOG_INFO, "*DEBUG* still running thread ".$_->tid());
         $_->kill('KILL');
         $_->detach();
     }

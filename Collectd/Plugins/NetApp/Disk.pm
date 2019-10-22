@@ -64,7 +64,12 @@ sub disk_module {
         }
 
         $iterator->child_add_string( "max-records", 500 );
-        my $output = connect_filer($hostname)->invoke_elem( $iterator );
+
+        my $output;
+        eval {
+            $output = connect_filer($hostname)->invoke_elem($iterator);
+        };
+        plugin_log(LOG_INFO, "*DEBUG* connect filer: $@") if $@;
 
         if ($output->results_errno != 0) {
             my $r = $output->results_reason();

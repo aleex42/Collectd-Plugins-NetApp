@@ -253,7 +253,7 @@ sub aggr_module {
     eval {
         $aggr_df_result = cdot_aggr_df($hostname);
     };            
-    plugin_log(LOG_INFO, "*DEBUG* cdot_aggr_df: $@") if $@;
+#    plugin_log(LOG_INFO, "*DEBUG* cdot_aggr_df: $@") if $@;
 
     if($aggr_df_result){
 
@@ -333,7 +333,7 @@ sub aggr_module {
             my $aggr_value = $aggr_df_reserved->{$aggr};
 
 
-            plugin_log(LOG_INFO, "*DEBUG* aggr_reserv: $aggr_value");
+#            plugin_log(LOG_INFO, "*DEBUG* aggr_reserv: $aggr_value");
 
             unless($aggr_value eq "0"){
 
